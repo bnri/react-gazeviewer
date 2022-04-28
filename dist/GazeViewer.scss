@@ -1,0 +1,136 @@
+$leftbar-size:100px;
+$bottombar-size:26px;
+$right-size : calc(100% - #{$leftbar-size});
+$viewzone-size : calc(100% - #{$bottombar-size});
+
+// $right-size:500px;
+$main-color: #7367f0;
+.GazeViewer{
+    width:100%;
+    height:100%;
+    background:white;
+    display:flex;
+    box-sizing: border-box;
+    .left{
+        width:$leftbar-size;
+        height:100%;
+        border-right:1px solid $main-color;
+        box-sizing: border-box;
+
+    }
+    .right{
+        width:$right-size;
+        height:100%;
+        // background: red;
+        .viewZone{
+            // background-color: green;
+            // height:calc(100% - #{$bottombar-size});
+            height:$viewzone-size;
+            // height:400px;
+            width:100%;
+            background:gray;
+            position:relative;
+            .viewGaze{
+                width:100%;                
+                .GC{
+                    box-sizing: border-box;
+                    background: #000;
+                    position:absolute;
+                    transform-origin:0px 0px;
+                    display:flex;
+                    justify-content: center;
+                    align-items: center;
+                    position:relative;
+                    .target{
+                        position:absolute;
+                        background:#fff;
+                        border-radius:50%;
+                        box-sizing: border-box;
+                        border:none;
+                        outline:none;
+                    }
+                    .GC-canvasWrapper{
+                        box-sizing: border-box;
+                        background: transparent;
+                        position:absolute;
+                        transform-origin:0px 0px;
+                        display:flex;
+                        justify-content: center;
+                        align-items: center;
+        
+                        .gazeCanvas{
+                            width:100%;
+                            height:100%;
+    
+        
+                        }
+                    }
+                }
+    
+            }
+            .viewChart{
+                width:100%;
+                background: #fff;
+                box-sizing: border-box;
+                border-top:1px solid $main-color;
+            }
+        }
+      
+        .barZone{
+            box-sizing: border-box;
+            border-top:1px solid $main-color;
+            height:$bottombar-size;
+            width:100%;
+
+            .rangePlayWrapper{
+                height:24px;
+                width:100%;
+                box-sizing: border-box;
+                display:flex;
+                align-items: center;
+                justify-content: center;
+
+                .rangePlay{
+                    border:none;
+                    background: #e5e4e3;
+                    border-radius:0;
+                    cursor:pointer;
+                    height:7px;
+                    overflow:hidden;
+                    -webkit-appearance:none;
+                    position:relative;
+                    width:99%;
+                    margin:0;
+                    &::-webkit-slider-thumb{
+                        -webkit-appearance:none;
+                        width:7px;
+                        height:7px;
+                        background: #902020; 
+                        box-shadow: -100vw 0 0 100vw #cf2e2e; /* 재생된곳*/
+                        border: 0.1px solid #902020;
+                    
+                        cursor:pointer;
+                        &:hover{
+                            /* 엄지 마우스*/
+                            width:9px;
+                            height:9px;
+                        }
+                    }
+                    &:focus{
+                        outline:none;
+                    }
+                    &:hover{
+                        height:9px;
+                        /*transition: 100ms;*/
+                        &::-webkit-slider-thumb{
+                            width:9px;
+                            height:9px;
+                            transition: 100ms;
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+}
