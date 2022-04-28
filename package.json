@@ -1,0 +1,77 @@
+{
+  "name": "react-gazeviewer",
+  "version": "1.0.0",
+  "private": false,
+  "babel": {
+    "presets": [
+      "@babel/preset-env",
+      "@babel/preset-react"
+    ]
+  },
+  "description": "hoho",
+  "module": "dist/GazeViewer.js",
+  "main": "dist/GazeViewer.js",
+  "dependencies": {
+    "chart.js": "^2.9.4",
+    "chartjs-chart-box-and-violin-plot": "^2.3.0",
+    "chartjs-plugin-annotation": "^0.5.7",
+    "chartjs-plugin-datalabels": "^1.0.0",
+    "react-chartjs-2": "^2.11.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "publish:npm": "rm -rf dist && mkdir dist && babel src/lib -d dist --copy-files",
+    "deploy_npm": "npm version patch && npm publish"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "keywords": [
+    "react",
+    "scrviewer",
+    "gazeviewer"
+  ],
+  "devDependencies": {
+    "@babel/cli": "^7.17.6",
+    "@babel/preset-react": "^7.16.7",
+    "node-sass": "^4.14.1",
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.1.1",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-scripts": "^5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "author": "guripong",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bnri/react-gazeviewer.git"
+  },
+  "peerDependencies": {
+    "react": ">= 17",
+    "react-dom": ">= 17"
+  },
+  "engines": {
+    "node": ">= 14"
+  }
+}
