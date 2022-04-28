@@ -289,27 +289,55 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
   }, [taskNumber]);
 
   _react.default.useEffect(function () {
-    var interval;
+    var myrequest;
+    var fpsInterval = 1;
+    var then = Date.now();
+
+    function testfunction() {
+      myrequest = window.requestAnimationFrame(testfunction);
+      var now = Date.now();
+      var elapsed = now - then;
+      console.log("fps", 1000 / elapsed); // if (elapsed > fpsInterval) {
+
+      then = now - elapsed % fpsInterval;
+      set_nowTime(function (nt) {
+        if (nt * 1 >= endTime) {
+          set_isPlaying(false);
+          nt = endTime;
+          return nt;
+        } else {
+          nt = nt * 1 + elapsed / 1000 * playSpeed;
+          return nt;
+        }
+      }); // Put your drawing code here
+      // }
+    }
 
     if (isPlaying === true) {
+      /*
       interval = setInterval(function () {
-        set_nowTime(function (nt) {
-          if (nt * 1 >= endTime) {
-            set_isPlaying(false);
-            nt = endTime;
-            return nt;
-          } else {
-            nt = nt * 1 + 1 / playFrame * playSpeed;
-            return nt;
-          }
-        });
+          set_nowTime((nt) => {
+                if (nt * 1 >= endTime) {
+                    set_isPlaying(false);
+                  nt = endTime;
+                  return nt;
+              }
+              else {
+                  nt = nt * 1 + (1 / playFrame * playSpeed)
+                  return nt;
+              }
+          });
       }, 1000 / playFrame); //프레임 //0.1초마다 얼마큼씩 시간을 증가시킬거냐로
+      */
+      testfunction();
     } else {
-      clearInterval(interval);
+      // clearInterval(interval);
+      window.cancelAnimationFrame(myrequest);
     }
 
     return function () {
-      clearInterval(interval);
+      // clearInterval(interval);
+      window.cancelAnimationFrame(myrequest);
     };
   }, [isPlaying, endTime, playFrame, playSpeed]);
 
