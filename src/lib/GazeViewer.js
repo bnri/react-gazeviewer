@@ -265,67 +265,34 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
         
         let myrequest;
-        let fpsInterval = 1;
-        let then = Date.now();
-
-
-        function testfunction(){
-            myrequest=window.requestAnimationFrame(testfunction);
+        let startTime = Date.now();
+        function timeUpdate() {
+            myrequest = window.requestAnimationFrame(timeUpdate);
             let now = Date.now();
-            let elapsed = now - then;
-            console.log("fps",1000/elapsed);
-            // if (elapsed > fpsInterval) {
-                then = now - (elapsed % fpsInterval);
+            let elapsed = now - startTime;
+            // console.log("fps", 1000 / elapsed);
+            startTime = now;
+            set_nowTime((nt) => {
+                if (nt * 1 >= endTime) {
 
-                set_nowTime((nt)=>{
-                    if (nt * 1 >= endTime) {
-                 
-                        set_isPlaying(false);
-                        nt = endTime;
+                    set_isPlaying(false);
+                    nt = endTime;
 
-                        return nt;
-                    }
-                    else {
-                        nt = nt * 1 + (elapsed/1000)*playSpeed
-                        return nt;
-                    }
-                });
-                // Put your drawing code here
-        
-            // }
+                    return nt;
+                }
+                else {
+                    nt = nt * 1 + (elapsed / 1000) * playSpeed
+                    return nt;
+                }
+            });
         }
-
-
         if (isPlaying === true) {
-            /*
-            interval = setInterval(function () {
-                set_nowTime((nt) => {
-
-                    if (nt * 1 >= endTime) {
-
-                        set_isPlaying(false);
-                        nt = endTime;
-                        return nt;
-                    }
-                    else {
-                        nt = nt * 1 + (1 / playFrame * playSpeed)
-                        return nt;
-                    }
-                });
-            }, 1000 / playFrame); //프레임 //0.1초마다 얼마큼씩 시간을 증가시킬거냐로
-            */
-            testfunction();
-        
-
+            timeUpdate();
         }
         else {
-            // clearInterval(interval);
             window.cancelAnimationFrame(myrequest);
         }
-
-
         return () => {
-            // clearInterval(interval);
             window.cancelAnimationFrame(myrequest);
         }
     }, [isPlaying, endTime, playFrame, playSpeed]);
@@ -520,7 +487,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
     React.useEffect(() => {
         setTargetLocation();
         drawGaze();
-        drawChart();
+        // drawChart();
     }, [nowTime, setTargetLocation, drawGaze, drawChart])
 
 
