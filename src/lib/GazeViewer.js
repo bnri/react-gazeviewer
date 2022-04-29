@@ -6,13 +6,13 @@ import 'chartjs-plugin-datalabels';
 
 let lineChart;
 
+
 const GazeViewer = React.forwardRef(({ ...props }, ref) => {
     const { data } = props;
 
     const [nowTime, set_nowTime] = React.useState(0);
     const [taskNumber, set_taskNumber] = React.useState(0);
     const [playSpeed, set_playSpeed] = React.useState(1);
-    const [playFrame, set_playFrame] = React.useState(60); //frame per sec
 
     const [isPlaying, set_isPlaying] = React.useState(false);
 
@@ -295,7 +295,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
         return () => {
             window.cancelAnimationFrame(myrequest);
         }
-    }, [isPlaying, endTime, playFrame, playSpeed]);
+    }, [isPlaying, endTime, playSpeed]);
 
 
 
@@ -417,82 +417,87 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
         }
 
     }, [nowTime, taskArr, taskNumber, data, RPOG_SIZE]);
+    
 
-    const drawChart = React.useCallback(() => {
-        const task = taskArr[taskNumber];
-        if (!task) return;
-        // const pixel_per_cm = data.monitorInform.MONITOR_PX_PER_CM; //1cm 당 pixel
-        // const degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
-        // const w = data.screenW;
-        // const h = data.screenH;
-
-        let gazeArr = task.gazeData;
-
-        let Gdata={
-            target_x:[],
-            target_y:[],
-            eye_x:[],
-            eye_y:[],
-        }
-        // console.log("gazeArr",gazeArr);
-        for (let i = 0; i < gazeArr.length; i++) {
-            if (gazeArr[i].relTime <= nowTime * 1 && gazeArr[i].RPOGV) {
-                // console.log("gazeArr[i].target_xdegree?",gazeArr[i]);
-                // console.log("target_xdegree:",gazeArr[i].target_xdegree)
-                let target_xdata={
-                    x:gazeArr[i].relTime*1000,
-                    y:gazeArr[i].target_xdegree?gazeArr[i].target_xdegree:0
-                }
-                let target_ydata={
-                    x:gazeArr[i].relTime*1000,
-                    y:gazeArr[i].target_ydegree?gazeArr[i].target_ydegree:0
-                }
-                let eye_xdata={
-                    x:gazeArr[i].relTime*1000,
-                    y:gazeArr[i].xdegree?gazeArr[i].xdegree:0
-                }
-                let eye_ydata={
-                    x:gazeArr[i].relTime*1000,
-                    y:gazeArr[i].ydegree?gazeArr[i].ydegree:0
-                }
-
-                Gdata.target_x.push(target_xdata);
-                Gdata.target_y.push(target_ydata);
-                Gdata.eye_x.push(eye_xdata);
-                Gdata.eye_y.push(eye_ydata);
+    const drawChart = React.useCallback(()=> {
+      
+            const task = taskArr[taskNumber];
+            if (!task) return;
+            // const pixel_per_cm = data.monitorInform.MONITOR_PX_PER_CM; //1cm 당 pixel
+            // const degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
+            // const w = data.screenW;
+            // const h = data.screenH;
+            let gazeArr = task.gazeData;
+    
+            let Gdata={
+                target_x:[],
+                target_y:[],
+                eye_x:[],
+                eye_y:[],
             }
-        }
+            // console.log("gazeArr",gazeArr);
+            for (let i = 0; i < gazeArr.length; i++) {
+                if (gazeArr[i].relTime <= nowTime * 1 && gazeArr[i].RPOGV) {
+                    // console.log("gazeArr[i].target_xdegree?",gazeArr[i]);
+                    // console.log("target_xdegree:",gazeArr[i].target_xdegree)
+                    let target_xdata={
+                        x:gazeArr[i].relTime*1000,
+                        y:gazeArr[i].target_xdegree?gazeArr[i].target_xdegree:0
+                    }
+                    let target_ydata={
+                        x:gazeArr[i].relTime*1000,
+                        y:gazeArr[i].target_ydegree?gazeArr[i].target_ydegree:0
+                    }
+                    let eye_xdata={
+                        x:gazeArr[i].relTime*1000,
+                        y:gazeArr[i].xdegree?gazeArr[i].xdegree:0
+                    }
+                    let eye_ydata={
+                        x:gazeArr[i].relTime*1000,
+                        y:gazeArr[i].ydegree?gazeArr[i].ydegree:0
+                    }
+    
+                    Gdata.target_x.push(target_xdata);
+                    Gdata.target_y.push(target_ydata);
+                    Gdata.eye_x.push(eye_xdata);
+                    Gdata.eye_y.push(eye_ydata);
+                }
+            }
+    
+            // let lasttarget_xdata={
+            //     x:gazeArr[gazeArr.length-1].relTime*1000,
+            //     y:gazeArr[gazeArr.length-1].target_xdegree?gazeArr[gazeArr.length-1].target_xdegree:0
+            // }
+    
+            // Gdata.target_x.push(lasttarget_xdata);
+     
+    
+    
+            if (lineChart) {
+                // console.log("Gdata.target_x",Gdata.target_x);
+                    lineChart.chartInstance.data.datasets[0].data = Gdata.target_x;     
+                    lineChart.chartInstance.data.datasets[1].data = Gdata.eye_x;     
+                    lineChart.chartInstance.data.datasets[2].data = Gdata.target_y;     
+                    lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y;  
+                    lineChart.chartInstance.update();
+                
+            }
+    },[nowTime, taskArr, taskNumber]);
 
-        // let lasttarget_xdata={
-        //     x:gazeArr[gazeArr.length-1].relTime*1000,
-        //     y:gazeArr[gazeArr.length-1].target_xdegree?gazeArr[gazeArr.length-1].target_xdegree:0
-        // }
-
-        // Gdata.target_x.push(lasttarget_xdata);
- 
 
 
-        if (lineChart) {
-            // console.log("Gdata.target_x",Gdata.target_x);
-                lineChart.chartInstance.data.datasets[0].data = Gdata.target_x;     
-                lineChart.chartInstance.data.datasets[1].data = Gdata.eye_x;     
-                lineChart.chartInstance.data.datasets[2].data = Gdata.target_y;     
-                lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y;  
-                lineChart.chartInstance.update();
-            
-        }
-
-    }, [nowTime, taskArr, taskNumber]);
+    React.useEffect(()=>{
+        drawChart();
+    },[drawChart]);
 
     React.useEffect(() => {
         setTargetLocation();
         drawGaze();
-        // drawChart();
-    }, [nowTime, setTargetLocation, drawGaze, drawChart])
+    }, [setTargetLocation, drawGaze])
 
 
 
-    const [chartHeight, set_chartHeight] = React.useState('150');
+    const [chartHeight] = React.useState('250');
 
 
     const [Goptions] = React.useState({
@@ -525,26 +530,45 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             xAxes: [
                 {
                     id: "timeid",
-                    display: false,       // 실제시간 임시로 true//
+                    display: true,       // 실제시간 임시로 true//
                     type: 'time',
                     time: {
 
                         unit: 'mything',
 
                         displayFormats: {
-                            mything: 'ss.SS'
+                            mything: 'ss.SSS'
                         },
 
                         ///////여기서조정해야함
-                        //min: 4,
-                        //max: 10,
-
+                        // min: 0,
+                        // max: 10,
                     },
-                    gridLines: {
-                        color: "rgba(0, 0, 0, 0)",
+                    //x축 숨기려면 이렇게
+                    // gridLines: {
+                    //     color: "rgba(0, 0, 0, 0)",
+                    // },
+                    scaleLabel: { /////////////////x축아래 라벨
+                        display: true,
+                        labelString: 'Time(s)',
+                        fontStyle: 'bold',
+                        fontColor: "black"
                     },
                     ticks: {
                         source: 'data', //auto,data,labels
+                        // autoSkip: true,
+                        // maxRotation: 0,
+                        // major: {
+                        //   enabled: true
+                        // },
+                        // stepSize: 10,
+                        callback:function(val,index){
+
+                            // console.log("asfasf",val,index);
+                            if(index%60===0){
+                                return (val*1).toFixed(3);
+                            }
+                        }
                     }
                 }
             ],
@@ -554,7 +578,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     position: 'left',
                     scaleLabel: { /////////////////x축아래 라벨
                         display: true,
-                        labelString: '각도',
+                        labelString: 'Position(d)',
                         fontStyle: 'bold',
                         fontColor: "black"
                     },
@@ -594,7 +618,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     */
                 ],
                 steppedLine: "before",
-                label: "target_X",
+                label: "target H",
                 borderColor: "rgba(0,0,255,0.4)",//"#0000ff",
                 backgroundColor: 'rgba(0,0,255,0.4)',
                 fill: false,
@@ -607,9 +631,9 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             { //eyex
                 data: [],
                 steppedLine: "before",
-                label: "eye_X",
-                borderColor: "rgba(255,0,0,0.7)",//"#0000ff",
-                backgroundColor: 'rgba(255,0,0,0.7)',
+                label: "gaze H",
+                borderColor: "rgba(0,255,0,0.7)",//"#0000ff",
+                backgroundColor: 'rgba(0,255,0,0.7)',
                 fill: false,
                 yAxisID: "degree",
                 xAxisID: "timeid",
@@ -620,9 +644,9 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             { //targety
                 data: [],
                 steppedLine: "before",
-                label: "target_Y",
-                borderColor: "rgba(255,255,0,0.4)",//"#0000ff",
-                backgroundColor: 'rgba(255,255,0,0.4)',
+                label: "target V",
+                borderColor: "rgba(255,0,0,0.4)",//"#0000ff",
+                backgroundColor: 'rgba(255,0,0,0.4)',
                 fill: false,
                 yAxisID: "degree",
                 xAxisID: "timeid",
@@ -633,7 +657,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             { //eyex
                 data: [],
                 steppedLine: "before",
-                label: "eye_Y",
+                label: "gaze V",
                 borderColor: "rgba(255,127,0,0.7)",//"#0000ff",
                 backgroundColor: 'rgba(255,127,0,0.7)',
                 fill: false,
@@ -643,29 +667,29 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 pointRadius: 0.3, //데이터 포인터크기
                 pointHoverRadius: 2, //hover 데이터포인터크기
             },
-            {  // 깜빡임 Blink
-                data: [
-                    /*
-                    {x:0,y:0},
-                    {x:50,y:0},
-                    {x:50,y:1},
-                    {x:50,y:0},
-                    {x:70,y:0},
-                    {x:70,y:1},
-                    {x:80,y:1}
-                    */
-                ],
-                steppedLine: "before",
-                borderWidth: 0,
-                label: "Blink",
-                borderColor: "rgba(0,255,0,0.2)",//""#ff0000",
-                backgroundColor: 'rgba(0,255,0,0.2)',
-                fill: true,
-                xAxisID: "timeid",
-                yAxisID: "ax_blink",
-                pointRadius: 0, //데이터 포인터크기
-                pointHoverRadius: 0, //hover 데이터포인터크기
-            }
+            // {  // 깜빡임 Blink
+            //     data: [
+            //         /*
+            //         {x:0,y:0},
+            //         {x:50,y:0},
+            //         {x:50,y:1},
+            //         {x:50,y:0},
+            //         {x:70,y:0},
+            //         {x:70,y:1},
+            //         {x:80,y:1}
+            //         */
+            //     ],
+            //     steppedLine: "before",
+            //     borderWidth: 0,
+            //     label: "Blink",
+            //     borderColor: "rgba(0,255,0,0.2)",//""#ff0000",
+            //     backgroundColor: 'rgba(0,255,0,0.2)',
+            //     fill: true,
+            //     xAxisID: "timeid",
+            //     yAxisID: "ax_blink",
+            //     pointRadius: 0, //데이터 포인터크기
+            //     pointHoverRadius: 0, //hover 데이터포인터크기
+            // }
         ],
     });
     return (<div className="GazeViewer" ref={ref}>
@@ -679,22 +703,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     })}
                 </select>
             </div>
-            <div>frame
-                <select value={playFrame} onChange={e => set_playFrame(e.target.value * 1)}>
-                    <option>
-                        10
-                    </option>
-                    <option>
-                        20
-                    </option>
-                    <option>
-                        30
-                    </option>
-                    <option>
-                        60
-                    </option>
-                </select>
-            </div>
+
             <div>speed
                 <select value={playSpeed} onChange={e => set_playSpeed(e.target.value * 1)}>
                     <option>
