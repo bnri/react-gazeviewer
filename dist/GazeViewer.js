@@ -59,35 +59,29 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       playSpeed = _React$useState6[0],
       set_playSpeed = _React$useState6[1];
 
-  var _React$useState7 = _react.default.useState(60),
+  var _React$useState7 = _react.default.useState(false),
       _React$useState8 = _slicedToArray(_React$useState7, 2),
-      playFrame = _React$useState8[0],
-      set_playFrame = _React$useState8[1]; //frame per sec
-
-
-  var _React$useState9 = _react.default.useState(false),
-      _React$useState10 = _slicedToArray(_React$useState9, 2),
-      isPlaying = _React$useState10[0],
-      set_isPlaying = _React$useState10[1];
+      isPlaying = _React$useState8[0],
+      set_isPlaying = _React$useState8[1];
 
   var gazeRef = _react.default.useRef();
 
   var canvasRef = _react.default.useRef();
 
+  var _React$useState9 = _react.default.useState(0),
+      _React$useState10 = _slicedToArray(_React$useState9, 2),
+      innerFrameScale = _React$useState10[0],
+      set_innerFrameScale = _React$useState10[1];
+
   var _React$useState11 = _react.default.useState(0),
       _React$useState12 = _slicedToArray(_React$useState11, 2),
-      innerFrameScale = _React$useState12[0],
-      set_innerFrameScale = _React$useState12[1];
+      innerFrameTop = _React$useState12[0],
+      set_innerFrameTop = _React$useState12[1];
 
   var _React$useState13 = _react.default.useState(0),
       _React$useState14 = _slicedToArray(_React$useState13, 2),
-      innerFrameTop = _React$useState14[0],
-      set_innerFrameTop = _React$useState14[1];
-
-  var _React$useState15 = _react.default.useState(0),
-      _React$useState16 = _slicedToArray(_React$useState15, 2),
-      innerFrameLeft = _React$useState16[0],
-      set_innerFrameLeft = _React$useState16[1];
+      innerFrameLeft = _React$useState14[0],
+      set_innerFrameLeft = _React$useState14[1];
 
   var resizeInnerFrame = _react.default.useCallback(function () {
     if (!gazeRef.current) return;
@@ -127,10 +121,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     resize100();
   }, [data]);
 
-  var _React$useState17 = _react.default.useState(true),
-      _React$useState18 = _slicedToArray(_React$useState17, 2),
-      justoneTimeResizeTwice = _React$useState18[0],
-      set_justoneTimeResizeTwice = _React$useState18[1];
+  var _React$useState15 = _react.default.useState(true),
+      _React$useState16 = _slicedToArray(_React$useState15, 2),
+      justoneTimeResizeTwice = _React$useState16[0],
+      set_justoneTimeResizeTwice = _React$useState16[1];
 
   _react.default.useEffect(function () {
     resizeInnerFrame();
@@ -290,16 +284,14 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
   _react.default.useEffect(function () {
     var myrequest;
-    var fpsInterval = 1;
-    var then = Date.now();
+    var startTime = Date.now();
 
-    function testfunction() {
-      myrequest = window.requestAnimationFrame(testfunction);
+    function timeUpdate() {
+      myrequest = window.requestAnimationFrame(timeUpdate);
       var now = Date.now();
-      var elapsed = now - then;
-      console.log("fps", 1000 / elapsed); // if (elapsed > fpsInterval) {
+      var elapsed = now - startTime; // console.log("fps", 1000 / elapsed);
 
-      then = now - elapsed % fpsInterval;
+      startTime = now;
       set_nowTime(function (nt) {
         if (nt * 1 >= endTime) {
           set_isPlaying(false);
@@ -309,47 +301,29 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           nt = nt * 1 + elapsed / 1000 * playSpeed;
           return nt;
         }
-      }); // Put your drawing code here
-      // }
+      });
     }
 
     if (isPlaying === true) {
-      /*
-      interval = setInterval(function () {
-          set_nowTime((nt) => {
-                if (nt * 1 >= endTime) {
-                    set_isPlaying(false);
-                  nt = endTime;
-                  return nt;
-              }
-              else {
-                  nt = nt * 1 + (1 / playFrame * playSpeed)
-                  return nt;
-              }
-          });
-      }, 1000 / playFrame); //프레임 //0.1초마다 얼마큼씩 시간을 증가시킬거냐로
-      */
-      testfunction();
+      timeUpdate();
     } else {
-      // clearInterval(interval);
       window.cancelAnimationFrame(myrequest);
     }
 
     return function () {
-      // clearInterval(interval);
       window.cancelAnimationFrame(myrequest);
     };
-  }, [isPlaying, endTime, playFrame, playSpeed]);
+  }, [isPlaying, endTime, playSpeed]);
+
+  var _React$useState17 = _react.default.useState(0),
+      _React$useState18 = _slicedToArray(_React$useState17, 2),
+      targetLeft = _React$useState18[0],
+      set_targetLeft = _React$useState18[1];
 
   var _React$useState19 = _react.default.useState(0),
       _React$useState20 = _slicedToArray(_React$useState19, 2),
-      targetLeft = _React$useState20[0],
-      set_targetLeft = _React$useState20[1];
-
-  var _React$useState21 = _react.default.useState(0),
-      _React$useState22 = _slicedToArray(_React$useState21, 2),
-      targetTop = _React$useState22[0],
-      set_targetTop = _React$useState22[1];
+      targetTop = _React$useState20[0],
+      set_targetTop = _React$useState20[1];
 
   var setTargetLocation = _react.default.useCallback(function () {
     // console.log("setTargetLocation!!")
@@ -421,10 +395,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     }
   }, [nowTime, taskArr, taskNumber, data]);
 
-  var _React$useState23 = _react.default.useState(3),
-      _React$useState24 = _slicedToArray(_React$useState23, 2),
-      RPOG_SIZE = _React$useState24[0],
-      set_RPOG_SIZE = _React$useState24[1];
+  var _React$useState21 = _react.default.useState(3),
+      _React$useState22 = _slicedToArray(_React$useState21, 2),
+      RPOG_SIZE = _React$useState22[0],
+      set_RPOG_SIZE = _React$useState22[1];
 
   var drawGaze = _react.default.useCallback(function () {
     var task = taskArr[taskNumber];
@@ -513,17 +487,19 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
   }, [nowTime, taskArr, taskNumber]);
 
   _react.default.useEffect(function () {
+    drawChart();
+  }, [drawChart]);
+
+  _react.default.useEffect(function () {
     setTargetLocation();
     drawGaze();
-    drawChart();
-  }, [nowTime, setTargetLocation, drawGaze, drawChart]);
+  }, [setTargetLocation, drawGaze]);
 
-  var _React$useState25 = _react.default.useState('150'),
-      _React$useState26 = _slicedToArray(_React$useState25, 2),
-      chartHeight = _React$useState26[0],
-      set_chartHeight = _React$useState26[1];
+  var _React$useState23 = _react.default.useState('250'),
+      _React$useState24 = _slicedToArray(_React$useState23, 1),
+      chartHeight = _React$useState24[0];
 
-  var _React$useState27 = _react.default.useState({
+  var _React$useState25 = _react.default.useState({
     plugins: {
       datalabels: {
         formatter: function formatter(value, ctx) {
@@ -549,24 +525,44 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     scales: {
       xAxes: [{
         id: "timeid",
-        display: false,
+        display: true,
         // 실제시간 임시로 true//
         type: 'time',
         time: {
           unit: 'mything',
           displayFormats: {
-            mything: 'ss.SS'
+            mything: 'ss.SSS'
           } ///////여기서조정해야함
-          //min: 4,
-          //max: 10,
+          // min: 0,
+          // max: 10,
 
         },
-        gridLines: {
-          color: "rgba(0, 0, 0, 0)"
+        //x축 숨기려면 이렇게
+        // gridLines: {
+        //     color: "rgba(0, 0, 0, 0)",
+        // },
+        scaleLabel: {
+          /////////////////x축아래 라벨
+          display: true,
+          labelString: 'Time(s)',
+          fontStyle: 'bold',
+          fontColor: "black"
         },
         ticks: {
-          source: 'data' //auto,data,labels
-
+          source: 'data',
+          //auto,data,labels
+          // autoSkip: true,
+          // maxRotation: 0,
+          // major: {
+          //   enabled: true
+          // },
+          // stepSize: 10,
+          callback: function callback(val, index) {
+            // console.log("asfasf",val,index);
+            if (index % 60 === 0) {
+              return (val * 1).toFixed(3);
+            }
+          }
         }
       }],
       yAxes: [{
@@ -575,7 +571,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         scaleLabel: {
           /////////////////x축아래 라벨
           display: true,
-          labelString: '각도',
+          labelString: 'Position(d)',
           fontStyle: 'bold',
           fontColor: "black"
         },
@@ -600,10 +596,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       }]
     }
   }),
-      _React$useState28 = _slicedToArray(_React$useState27, 1),
-      Goptions = _React$useState28[0];
+      _React$useState26 = _slicedToArray(_React$useState25, 1),
+      Goptions = _React$useState26[0];
 
-  var _React$useState29 = _react.default.useState({
+  var _React$useState27 = _react.default.useState({
     datasets: [{
       //targetx
       data: [
@@ -614,7 +610,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         */
       ],
       steppedLine: "before",
-      label: "target_X",
+      label: "target H",
       borderColor: "rgba(0,0,255,0.4)",
       //"#0000ff",
       backgroundColor: 'rgba(0,0,255,0.4)',
@@ -630,10 +626,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       //eyex
       data: [],
       steppedLine: "before",
-      label: "eye_X",
-      borderColor: "rgba(255,0,0,0.7)",
+      label: "gaze H",
+      borderColor: "rgba(0,255,0,0.7)",
       //"#0000ff",
-      backgroundColor: 'rgba(255,0,0,0.7)',
+      backgroundColor: 'rgba(0,255,0,0.7)',
       fill: false,
       yAxisID: "degree",
       xAxisID: "timeid",
@@ -646,10 +642,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       //targety
       data: [],
       steppedLine: "before",
-      label: "target_Y",
-      borderColor: "rgba(255,255,0,0.4)",
+      label: "target V",
+      borderColor: "rgba(255,0,0,0.4)",
       //"#0000ff",
-      backgroundColor: 'rgba(255,255,0,0.4)',
+      backgroundColor: 'rgba(255,0,0,0.4)',
       fill: false,
       yAxisID: "degree",
       xAxisID: "timeid",
@@ -662,7 +658,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       //eyex
       data: [],
       steppedLine: "before",
-      label: "eye_Y",
+      label: "gaze V",
       borderColor: "rgba(255,127,0,0.7)",
       //"#0000ff",
       backgroundColor: 'rgba(255,127,0,0.7)',
@@ -674,36 +670,33 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       //데이터 포인터크기
       pointHoverRadius: 2 //hover 데이터포인터크기
 
-    }, {
-      // 깜빡임 Blink
-      data: [
-        /*
-        {x:0,y:0},
-        {x:50,y:0},
-        {x:50,y:1},
-        {x:50,y:0},
-        {x:70,y:0},
-        {x:70,y:1},
-        {x:80,y:1}
-        */
-      ],
-      steppedLine: "before",
-      borderWidth: 0,
-      label: "Blink",
-      borderColor: "rgba(0,255,0,0.2)",
-      //""#ff0000",
-      backgroundColor: 'rgba(0,255,0,0.2)',
-      fill: true,
-      xAxisID: "timeid",
-      yAxisID: "ax_blink",
-      pointRadius: 0,
-      //데이터 포인터크기
-      pointHoverRadius: 0 //hover 데이터포인터크기
-
-    }]
+    } // {  // 깜빡임 Blink
+    //     data: [
+    //         /*
+    //         {x:0,y:0},
+    //         {x:50,y:0},
+    //         {x:50,y:1},
+    //         {x:50,y:0},
+    //         {x:70,y:0},
+    //         {x:70,y:1},
+    //         {x:80,y:1}
+    //         */
+    //     ],
+    //     steppedLine: "before",
+    //     borderWidth: 0,
+    //     label: "Blink",
+    //     borderColor: "rgba(0,255,0,0.2)",//""#ff0000",
+    //     backgroundColor: 'rgba(0,255,0,0.2)',
+    //     fill: true,
+    //     xAxisID: "timeid",
+    //     yAxisID: "ax_blink",
+    //     pointRadius: 0, //데이터 포인터크기
+    //     pointHoverRadius: 0, //hover 데이터포인터크기
+    // }
+    ]
   }),
-      _React$useState30 = _slicedToArray(_React$useState29, 1),
-      Gdata = _React$useState30[0];
+      _React$useState28 = _slicedToArray(_React$useState27, 1),
+      Gdata = _React$useState28[0];
 
   return /*#__PURE__*/_react.default.createElement("div", {
     className: "GazeViewer",
@@ -720,12 +713,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       key: "task" + index,
       value: index
     }, index + 1 + "th task");
-  }))), /*#__PURE__*/_react.default.createElement("div", null, "frame", /*#__PURE__*/_react.default.createElement("select", {
-    value: playFrame,
-    onChange: function onChange(e) {
-      return set_playFrame(e.target.value * 1);
-    }
-  }, /*#__PURE__*/_react.default.createElement("option", null, "10"), /*#__PURE__*/_react.default.createElement("option", null, "20"), /*#__PURE__*/_react.default.createElement("option", null, "30"), /*#__PURE__*/_react.default.createElement("option", null, "60"))), /*#__PURE__*/_react.default.createElement("div", null, "speed", /*#__PURE__*/_react.default.createElement("select", {
+  }))), /*#__PURE__*/_react.default.createElement("div", null, "speed", /*#__PURE__*/_react.default.createElement("select", {
     value: playSpeed,
     onChange: function onChange(e) {
       return set_playSpeed(e.target.value * 1);
