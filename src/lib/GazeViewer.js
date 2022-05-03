@@ -348,6 +348,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 let diff_ydegree_arr=[];
                 let diff_xdegree_linear_arr = [];
                 let diff_xdegree_polynomial_arr = [];
+                let ydegree_arr=[];
+                let xdegree_arr=[];
 
                 for (let j = 0; j < gazeArr.length; j++) {
                     if (type === 'teleport') {
@@ -355,11 +357,14 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                             gazeArr[j].relTime*1 <= task.startWaitTime*1){
                             
                                 if(gazeArr[j].diff_xdegree!==null){
-                                    diff_xdegree_arr.push(Math.abs(gazeArr[j].diff_xdegree));
+                                    diff_xdegree_arr.push(gazeArr[j].diff_xdegree);
+                                    xdegree_arr.push(gazeArr[j].xdegree);
                                     // diff_xdegree_linear_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
                                 }
                                 if(gazeArr[j].diff_ydegree!==null){
-                                    diff_ydegree_arr.push(Math.abs(gazeArr[j].diff_ydegree));
+                                    diff_ydegree_arr.push(gazeArr[j].diff_ydegree);
+                                    ydegree_arr.push(gazeArr[j].ydegree);
+
                                 }
                         }
 
@@ -382,7 +387,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 task.mean_diff_ydegree = (diff_ydegree_arr.length && mean(diff_ydegree_arr)) || null;
                 task.std_diff_xdegree = (diff_xdegree_arr.length && std(diff_xdegree_arr)) || null;
                 task.std_diff_ydegree = (diff_ydegree_arr.length && std(diff_ydegree_arr)) || null;
-                
+                task.mean_ydegree = (ydegree_arr.length && mean(ydegree_arr)) ||null;
+                task.mean_xdegree = (xdegree_arr.length && mean(xdegree_arr)) ||null;
+                task.std_ydegree =(ydegree_arr.length && std(ydegree_arr)) ||null;
+                task.std_xdegree =(xdegree_arr.length && std(xdegree_arr)) ||null;
 
                 task.stabletime = {
                     s:1,
@@ -436,15 +444,15 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 }
                 if(task.type==='teleport'){
                     task.diff_xdegree_linear_arr = diff_xdegree_linear_arr;
-                    let result=regression.linear(diff_xdegree_linear_arr);
-                    task.res_diff_xdegree_linear_arr=result;
+                    // let result=mean(diff_xdegree_linear_arr);
+                    // task.res_diff_xdegree_arr_mean=result;
                 }
                 else if(task.type==='circular'){
                
-                    task.diff_xdegree_polynomial_arr = diff_xdegree_polynomial_arr;
-                    // let result=sineRegression(diff_xdegree_polynomial_arr,task.duration);
-                    let result=regression.polynomial(diff_xdegree_polynomial_arr,{ order : 5, precision: 2 });
-                    task.res_diff_xdegree_polynomial_arr=result;
+                    // task.diff_xdegree_arr = diff_xdegree_polynomial_arr;
+                    // // let result=sineRegression(diff_xdegree_polynomial_arr,task.duration);
+                    // let result=regression.polynomial(diff_xdegree_polynomial_arr,{ order : 5, precision: 2 });
+                    // task.res_diff_xdegree_polynomial_arr=result;
                 }
 
 
@@ -750,7 +758,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
         // std * 1.96 / 루트(모집단수)
 
 
-        const annotation=[{
+        const annotation=[
+            {
             drawTime: "afterDatasetsDraw", // (default)
             type: "box",
             mode: "horizontal",
@@ -762,9 +771,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             borderWidth: 1,
             xMin : taskArr[taskNumber].stabletime.s*1000,
             xMax : taskArr[taskNumber].stabletime.e*1000,
-            yMin : -taskArr[taskNumber].std_diff_xdegree*5,
-            yMax : taskArr[taskNumber].std_diff_xdegree*5
-          },{
+            yMin : taskArr[taskNumber].mean_xdegree-taskArr[taskNumber].std_xdegree*2,
+            yMax : taskArr[taskNumber].mean_xdegree+taskArr[taskNumber].std_xdegree*2
+          },
+          {
             drawTime: "afterDatasetsDraw", // (default)
             type: "box",
             mode: "horizontal",
@@ -776,10 +786,11 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             borderWidth: 1,
             xMin : taskArr[taskNumber].stabletime.s*1000,
             xMax : taskArr[taskNumber].stabletime.e*1000,
-            yMin : -taskArr[taskNumber].std_diff_ydegree*5,
-            yMax : taskArr[taskNumber].std_diff_ydegree*5
+            yMin : taskArr[taskNumber].mean_ydegree-taskArr[taskNumber].std_ydegree*2,
+            yMax : taskArr[taskNumber].mean_ydegree+taskArr[taskNumber].std_ydegree*2
 
-          }];
+          }
+    ];
         
           console.log("annotation",annotation);
 
