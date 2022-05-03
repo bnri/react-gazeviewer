@@ -16,7 +16,9 @@
     "chartjs-chart-box-and-violin-plot": "^2.3.0",
     "chartjs-plugin-annotation": "^0.5.7",
     "chartjs-plugin-datalabels": "^1.0.0",
-    "react-chartjs-2": "^2.11.1"
+    "mathjs": "^10.5.0",
+    "react-chartjs-2": "^2.11.1",
+    "regression": "^2.0.1"
   },
   "scripts": {
     "start": "react-scripts start",

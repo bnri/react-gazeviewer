@@ -2,10 +2,119 @@ import React from "react";
 import './GazeViewer.scss';
 import _ from 'lodash';
 import { Line } from "react-chartjs-2"
-import 'chartjs-plugin-datalabels';
+import "chartjs-chart-box-and-violin-plot/build/Chart.BoxPlot.js";
+import "chartjs-plugin-datalabels";
+import "chartjs-plugin-annotation";
+import regression from 'regression';
+import {mean,std,
+    // atan2, chain, derivative, e, evaluate, log, pi, pow, round, sqrt
+  } from 'mathjs'
+// console.log(mean);
+// console.log(std);
+  // console.log(math);
+// console.log(regression);
+
+//https://stackoverflow.com/questions/16716302/how-do-i-fit-a-sine-curve-to-my-data-with-pylab-and-numpy
+
+
+//그나마 찾은 ㄱㅊ은것.. 머신러닝임 마찬가지로
+//https://github.com/mljs/levenberg-marquardt
+
+
+//advanced regression 모듈 우리꺼에 추가할것..
+var prepare_for_MathJax = function(string) {
+    // Prepare the formula string for MathJax, LaTeX style formula.
+    // Add $$ before and after string, replace 'e' notation with '10^'
+    // and remove redundant '+' in case it is directly followed by '-'.
+    return '\\(' + string.replace(/e\+?(-?\d+)/g,'\\cdot10^{$1}')
+                        .replace(/\+ -/g, '-') + '\\)';
+};
+
+const sineRegression = (data,period)=>{
+      // Sine regression. With a guessed value for the period p
+            // the function Sum((A*sin(2*pi*x/p + c) - y*)^2) is
+            // mimimized, where y* = y - <y>. Correlation coefficient is
+            // calculated according to r^2 = 1 - SSE/SST, where SSE is
+            // the sum of the squared deviations of y-data with respect
+            // to y-regression and where SST is the sum of the
+            // deviations of y-data with respect to the mean of y-data.
+            
+            if (typeof period === 'undefined') {
+                period = data[data.length - 1][0] - data[0][0];}
+
+            var sum = [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                b = 2 * Math.PI / period,
+                x, bx, y, yf, i, n, cos, sin,
+                results = [];
+
+            for (i = 0; i < data.length; i++) {
+                x = data[i][0];
+                y = data[i][1];
+                bx = b * x;
+                cos = Math.cos(bx);
+                sin = Math.sin(bx);
+                sum[0] += cos * cos;
+                sum[1] += cos * sin;
+                sum[2] += sin * sin;
+                sum[3] += y * cos;
+                sum[4] += y * sin;
+                sum[5] += 1;
+                sum[6] += cos;
+                sum[7] += sin;
+                sum[8] += y;}
+
+            n = sum[5];
+            var termss = sum[2] - sum[7] * sum[7] / n;
+            var termsc = sum[1] - sum[6] * sum[7] / n;
+            var termcc = sum[0] - sum[6] * sum[6] / n;
+            var termys = sum[4] - sum[8] * sum[7] / n;
+            var termyc = sum[3] - sum[8] * sum[6] / n;
+
+            var termA = termcc * termys - termsc * termyc;
+            var termB = termss * termyc - termsc * termys;
+            var termC = termss * termcc - termsc * termsc;
+
+            var sqAB = termA * termA + termB * termB;
+            var sqB = termB * termB;
+            var ratio = sqB / sqAB;
+            var a = Math.sqrt(sqAB * sqB) / termC / termB;
+            var c = Math.atan2(ratio, ratio * termA / termB);
+            if (a < 0) {
+                a = - a;
+                c = c + Math.PI;}
+            if (c < 0) {
+                c += 2 * Math.PI;}
+
+            var SSE = 0, SST = 0;
+            var d = (sum[8] - a * Math.cos(c) * sum[7] - a * Math.sin(c) * sum[6]) / n;
+            var yg = sum[8] / n;
+            for (i = 0; i < data.length; i++) {
+                x = data[i][0];
+                y = data[i][1];
+                yf = a * Math.sin(2 * Math.PI * x / period + c) + d;
+                SSE += (y - yf) * (y - yf);
+                SST += (y - yg) * (y - yg);}
+
+            for (i = 0; i < data.length; i++) {
+                x = data[i][0];
+                yf = a * Math.sin(2 * Math.PI * x / period + c) + d;
+                var coordinate = [x, yf];
+                results.push(coordinate);}
+
+            var corr = Math.sqrt(1 - SSE / SST) * Math.sqrt(1 - SSE / SST);
+            var corrstring = 'r^2 = ' + corr.toFixed(3);
+            var string = 'y = ' + a.toExponential(2) +
+                         '\\cdot \\sin \\left( \\frac{2 \\pi}{' +
+                         period.toExponential(2) + '} \\cdot x + ' +
+                         c.toExponential(2) + ' \\right) + ' +
+                         d.toExponential(2);
+
+            return {equation: [a, c], points: results,
+                    string: prepare_for_MathJax(string),
+                    corrstring: prepare_for_MathJax(corrstring)};
+}
 
 let lineChart;
-
 
 const GazeViewer = React.forwardRef(({ ...props }, ref) => {
     const { data } = props;
@@ -127,8 +236,6 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             const h = data.screenH;
 
 
-            // const target_xpixel = 
-
      
 
             for (let i = 0; i < newarr.length; i++) {
@@ -139,44 +246,46 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
                 let gazeArr = task.gazeData;
                 for (let j = 0; j < gazeArr.length; j++) {
-
+                    let target_pixels = {
+                        x:null,
+                        y:null,
+                    }
                     if (type === 'teleport') {
-                        let target_xpixel,target_ypixel;
+                        //2~5 고정임
+
                         if(gazeArr[j].relTime*1 < task.startWaitTime*1){
-                            target_xpixel=task.startCoord.x - w/2;
-                            target_ypixel=task.startCoord.y - h/2;
+                            target_pixels.x=task.startCoord.x - w/2;
+                            target_pixels.y=task.startCoord.y - h/2;
                        
                         }
                         else if (gazeArr[j].relTime * 1 < (task.duration * 1 + task.startWaitTime * 1)) {
-                            target_xpixel=task.endCoord.x - w/2;
-                            target_ypixel=task.endCoord.y- h/2;
+                            target_pixels.x=task.endCoord.x - w/2;
+                            target_pixels.y=task.endCoord.y- h/2;
                         }
                         else{
                             if(task.isReturn){
-                                target_xpixel=task.startCoord.x - w/2;
-                                target_ypixel=task.startCoord.y- h/2;
+                                target_pixels.x=task.startCoord.x - w/2;
+                                target_pixels.y=task.startCoord.y- h/2;
                             }
                             else{
-                                target_xpixel=task.endCoord.x - w/2;
-                                target_ypixel=task.endCoord.y- h/2;
+                                target_pixels.x=task.endCoord.x - w/2;
+                                target_pixels.y=task.endCoord.y- h/2;
                             }
 
                         }
-                        let target_xcm = target_xpixel / pixel_per_cm;
-                        let target_ycm = target_ypixel / pixel_per_cm;
+                        let target_xcm = target_pixels.x / pixel_per_cm;
+                        let target_ycm = target_pixels.y / pixel_per_cm;
                         let target_xdegree = target_xcm * degree_per_cm;
                         let target_ydegree = target_ycm * degree_per_cm;
                         gazeArr[j].target_xdegree = target_xdegree;
                         gazeArr[j].target_ydegree = target_ydegree;
+
                     }
                     else if (type === 'circular') {
                 
                         const radian = Math.PI / 180;
                         const radius = task.radius;
-                        let target_pixels = {
-                            x:null,
-                            y:null,
-                        }
+                  
                         if (gazeArr[j].relTime * 1 < task.startWaitTime) {
                             const cosTheta = Math.cos(task.startDegree * radian);
                             const sineTheta = Math.sin(task.startDegree * radian);
@@ -208,8 +317,6 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     }
 
 
-
-
                     if (gazeArr[j].RPOGV) {
                         let xpixel = (gazeArr[j].RPOGX - 0.5) * w
                         let ypixel = (gazeArr[j].RPOGY - 0.5) * h
@@ -218,16 +325,136 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                         let ycm = ypixel / pixel_per_cm;
                         let xdegree = xcm * degree_per_cm;
                         let ydegree = ycm * degree_per_cm;
+                        let diff_xdegree = gazeArr[j].target_xdegree - xdegree;
+                        let diff_ydegree = gazeArr[j].target_ydegree - ydegree;
                         gazeArr[j].xdegree = xdegree;
                         gazeArr[j].ydegree = ydegree;
+                        gazeArr[j].diff_xdegree = diff_xdegree;
+                        gazeArr[j].diff_ydegree = diff_ydegree;
                     }
                     else {
                         gazeArr[j].xdegree = null;
                         gazeArr[j].ydegree = null;
+                        gazeArr[j].diff_xdegree = null;
+                        gazeArr[j].diff_ydegree = null;
                     }
 
                 }
 
+
+              
+
+                let diff_xdegree_arr=[];
+                let diff_ydegree_arr=[];
+                let diff_xdegree_linear_arr = [];
+                let diff_xdegree_polynomial_arr = [];
+
+                for (let j = 0; j < gazeArr.length; j++) {
+                    if (type === 'teleport') {
+                        if(gazeArr[j].relTime*1 >= 1 &&
+                            gazeArr[j].relTime*1 <= task.startWaitTime*1){
+                            
+                                if(gazeArr[j].diff_xdegree!==null){
+                                    diff_xdegree_arr.push(Math.abs(gazeArr[j].diff_xdegree));
+                                    // diff_xdegree_linear_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
+                                }
+                                if(gazeArr[j].diff_ydegree!==null){
+                                    diff_ydegree_arr.push(Math.abs(gazeArr[j].diff_ydegree));
+                                }
+                        }
+
+                        if(gazeArr[j].relTime*1 >= 0 &&
+                            gazeArr[j].relTime*1 <= task.startWaitTime*1){
+                                diff_xdegree_linear_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
+                        }
+
+                    }
+                    else if(type==='circular'){
+                        if(gazeArr[j].relTime*1 >= task.startWaitTime*1 &&
+                            gazeArr[j].relTime*1 <= (task.startWaitTime*1 + task.duration*1) ){
+                            diff_xdegree_polynomial_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
+                        }
+                    }
+                }
+                task.diff_xdegree_arr= diff_xdegree_arr;
+                task.diff_ydegree_arr = diff_ydegree_arr;
+                task.mean_diff_xdegree = (diff_xdegree_arr.length && mean(diff_xdegree_arr)) || null;
+                task.mean_diff_ydegree = (diff_ydegree_arr.length && mean(diff_ydegree_arr)) || null;
+                task.std_diff_xdegree = (diff_xdegree_arr.length && std(diff_xdegree_arr)) || null;
+                task.std_diff_ydegree = (diff_ydegree_arr.length && std(diff_ydegree_arr)) || null;
+                
+
+                task.stabletime = {
+                    s:1,
+                    e:task.startWaitTime*1,
+                    sx_index:null,
+                    ex_index:null,                   
+                    sy_index:null,
+                    ey_index:null 
+                }
+
+                diff_xdegree_arr=[];
+                diff_ydegree_arr=[];
+                //1.5 +- 표준편차 사이
+              
+                for (let j = 0; j < gazeArr.length; j++) {
+                    if (type === 'teleport') {
+                        if(gazeArr[j].relTime*1 >= 1 &&
+                            gazeArr[j].relTime*1 <= task.startWaitTime*1){
+                            
+                                if(gazeArr[j].diff_xdegree!==null){
+                                    if(Math.abs(gazeArr[j].diff_xdegree)<1.5*task.std_diff_xdegree){
+                                        // diff_xdegree_arr.push(gazeArr[j].diff_xdegree);
+                                        gazeArr[j].valid_xdiff = true;
+                                        if(!task.stabletime.sx_index){
+                                            task.stabletime.sx_index=j;
+                                        }
+                                        task.stabletime.ex_index=j;
+
+                                       
+                                    }
+                                    else{
+                                        gazeArr[j].valid_xdiff = false;
+                                    }
+
+                                }
+                                if(gazeArr[j].diff_ydegree!==null){
+                                    if(Math.abs(gazeArr[j].diff_ydegree)<1.5*task.std_diff_ydegree){
+                                        // diff_ydegree_arr.push(gazeArr[j].diff_ydegree);
+                                        gazeArr[j].valid_ydiff = true;
+                                        if(!task.stabletime.sy_index){
+                                            task.stabletime.sy_index=j;
+                                        }
+                                        task.stabletime.ey_index=j;
+                                    }
+                                    else{
+                                        gazeArr[j].valid_ydiff = false;
+                                    }
+                                }
+                        }
+                    }
+                }
+                if(task.type==='teleport'){
+                    task.diff_xdegree_linear_arr = diff_xdegree_linear_arr;
+                    let result=regression.linear(diff_xdegree_linear_arr);
+                    task.res_diff_xdegree_linear_arr=result;
+                }
+                else if(task.type==='circular'){
+               
+                    task.diff_xdegree_polynomial_arr = diff_xdegree_polynomial_arr;
+                    // let result=sineRegression(diff_xdegree_polynomial_arr,task.duration);
+                    let result=regression.polynomial(diff_xdegree_polynomial_arr,{ order : 5, precision: 2 });
+                    task.res_diff_xdegree_polynomial_arr=result;
+                }
+
+
+
+
+                //teleport의 경우
+                //1초부터 ~ startWaitTime 전까지의 평균 diff degree
+                //std 를 구해서
+                //1.5std 밖에 있는녀석을 제외하고, 평균을 다시 구하고
+                //
             }
 
             console.log("newarr", newarr);
@@ -248,6 +475,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             return null;
         }
     }, [taskArr, taskNumber])
+
+
 
 
     const handleBtnPlay = () => {
@@ -428,12 +657,16 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             // const w = data.screenW;
             // const h = data.screenH;
             let gazeArr = task.gazeData;
-    
+            
+     
+
+
             let Gdata={
                 target_x:[],
                 target_y:[],
                 eye_x:[],
                 eye_y:[],
+ 
             }
             // console.log("gazeArr",gazeArr);
             for (let i = 0; i < gazeArr.length; i++) {
@@ -456,11 +689,15 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                         x:gazeArr[i].relTime*1000,
                         y:gazeArr[i].ydegree?gazeArr[i].ydegree:0
                     }
-    
+
+                
+                
                     Gdata.target_x.push(target_xdata);
                     Gdata.target_y.push(target_ydata);
                     Gdata.eye_x.push(eye_xdata);
                     Gdata.eye_y.push(eye_ydata);
+             
+
                 }
             }
     
@@ -479,6 +716,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     lineChart.chartInstance.data.datasets[1].data = Gdata.eye_x;     
                     lineChart.chartInstance.data.datasets[2].data = Gdata.target_y;     
                     lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y;  
+
+                    // if(equation){
+                    //     lineChart.chartInstance.data.datasets[4].data = Gdata.estimate;  
+                    // }
                     lineChart.chartInstance.update();
                 
             }
@@ -500,7 +741,49 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
     const [chartHeight] = React.useState('250');
 
 
-    const [Goptions] = React.useState({
+    const Goptions = React.useMemo(()=>{
+
+        console.log(taskArr[taskNumber]);
+        //95% 신뢰구간 1.96
+        // 99% 신뢰구간 2.58
+
+        // std * 1.96 / 루트(모집단수)
+
+
+        const annotation=[{
+            drawTime: "afterDatasetsDraw", // (default)
+            type: "box",
+            mode: "horizontal",
+            yScaleID: "degree",
+            xScaleID: "timeid",
+            // value: '7.5',
+            borderColor: "green",
+            backgroundColor: "rgba(0,255,0,0.05)",
+            borderWidth: 1,
+            xMin : taskArr[taskNumber].stabletime.s*1000,
+            xMax : taskArr[taskNumber].stabletime.e*1000,
+            yMin : -taskArr[taskNumber].std_diff_xdegree*5,
+            yMax : taskArr[taskNumber].std_diff_xdegree*5
+          },{
+            drawTime: "afterDatasetsDraw", // (default)
+            type: "box",
+            mode: "horizontal",
+            yScaleID: "degree",
+            xScaleID: "timeid",
+            // value: '7.5',
+            borderColor: "rgb(255,127,0)",
+            backgroundColor: "rgba(255,127,0,0.05)",
+            borderWidth: 1,
+            xMin : taskArr[taskNumber].stabletime.s*1000,
+            xMax : taskArr[taskNumber].stabletime.e*1000,
+            yMin : -taskArr[taskNumber].std_diff_ydegree*5,
+            yMax : taskArr[taskNumber].std_diff_ydegree*5
+
+          }];
+        
+          console.log("annotation",annotation);
+
+        return {
         plugins: {
             datalabels: {
                 formatter: (value, ctx) => {
@@ -512,7 +795,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 color: '#000000'
             },
         },
-
+        annotation: {
+            events: ["click"],
+            annotations: annotation,
+        },
         maintainAspectRatio: false,
         devicePixelRatio: window.devicePixelRatio * 3,
         animation: {
@@ -606,7 +892,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 }]
         },
 
-    });
+    }},[taskArr,taskNumber]);
+
     const [Gdata] = React.useState({
         datasets: [
             { //targetx
@@ -660,6 +947,19 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 label: "gaze V",
                 borderColor: "rgba(255,127,0,0.7)",//"#0000ff",
                 backgroundColor: 'rgba(255,127,0,0.7)',
+                fill: false,
+                yAxisID: "degree",
+                xAxisID: "timeid",
+                borderWidth: 1.5,
+                pointRadius: 0.3, //데이터 포인터크기
+                pointHoverRadius: 2, //hover 데이터포인터크기
+            },
+            { //estimate
+                data: [],
+                steppedLine: "before",
+                label: "estimate",
+                borderColor: "rgba(255,255,0,0.7)",//"#0000ff",
+                backgroundColor: 'rgba(255,255,0,0.7)',
                 fill: false,
                 yAxisID: "degree",
                 xAxisID: "timeid",
