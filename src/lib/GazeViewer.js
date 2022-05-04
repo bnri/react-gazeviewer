@@ -6,7 +6,7 @@ import "chartjs-chart-box-and-violin-plot/build/Chart.BoxPlot.js";
 import "chartjs-plugin-datalabels";
 import "chartjs-plugin-annotation";
 import regression from 'regression';
-import {mean,std,
+import {mean,std,distance,
     // atan2, chain, derivative, e, evaluate, log, pi, pow, round, sqrt
   } from 'mathjs'
 // console.log(mean);
@@ -22,98 +22,20 @@ import {mean,std,
 
 
 //advanced regression 모듈 우리꺼에 추가할것..
-var prepare_for_MathJax = function(string) {
-    // Prepare the formula string for MathJax, LaTeX style formula.
-    // Add $$ before and after string, replace 'e' notation with '10^'
-    // and remove redundant '+' in case it is directly followed by '-'.
-    return '\\(' + string.replace(/e\+?(-?\d+)/g,'\\cdot10^{$1}')
-                        .replace(/\+ -/g, '-') + '\\)';
-};
+/*
+saccade
+ => "analysis": { "type": "saccade", "direction": "top" }
 
-const sineRegression = (data,period)=>{
-      // Sine regression. With a guessed value for the period p
-            // the function Sum((A*sin(2*pi*x/p + c) - y*)^2) is
-            // mimimized, where y* = y - <y>. Correlation coefficient is
-            // calculated according to r^2 = 1 - SSE/SST, where SSE is
-            // the sum of the squared deviations of y-data with respect
-            // to y-regression and where SST is the sum of the
-            // deviations of y-data with respect to the mean of y-data.
-            
-            if (typeof period === 'undefined') {
-                period = data[data.length - 1][0] - data[0][0];}
+top | bottom | left | right
 
-            var sum = [0, 0, 0, 0, 0, 0, 0, 0, 0],
-                b = 2 * Math.PI / period,
-                x, bx, y, yf, i, n, cos, sin,
-                results = [];
+pursuit 
+ => "analysis": { "type": "pursuit", "direction": "clockwise", "rotationCount": 2 }
+ => "analysis": { "type": "pursuit", "direction": "anticlockwise", "rotationCount": 2 }
 
-            for (i = 0; i < data.length; i++) {
-                x = data[i][0];
-                y = data[i][1];
-                bx = b * x;
-                cos = Math.cos(bx);
-                sin = Math.sin(bx);
-                sum[0] += cos * cos;
-                sum[1] += cos * sin;
-                sum[2] += sin * sin;
-                sum[3] += y * cos;
-                sum[4] += y * sin;
-                sum[5] += 1;
-                sum[6] += cos;
-                sum[7] += sin;
-                sum[8] += y;}
+antisaccade
+ => "analysis": { "type": "antisaccade", "direction": "right" }
 
-            n = sum[5];
-            var termss = sum[2] - sum[7] * sum[7] / n;
-            var termsc = sum[1] - sum[6] * sum[7] / n;
-            var termcc = sum[0] - sum[6] * sum[6] / n;
-            var termys = sum[4] - sum[8] * sum[7] / n;
-            var termyc = sum[3] - sum[8] * sum[6] / n;
-
-            var termA = termcc * termys - termsc * termyc;
-            var termB = termss * termyc - termsc * termys;
-            var termC = termss * termcc - termsc * termsc;
-
-            var sqAB = termA * termA + termB * termB;
-            var sqB = termB * termB;
-            var ratio = sqB / sqAB;
-            var a = Math.sqrt(sqAB * sqB) / termC / termB;
-            var c = Math.atan2(ratio, ratio * termA / termB);
-            if (a < 0) {
-                a = - a;
-                c = c + Math.PI;}
-            if (c < 0) {
-                c += 2 * Math.PI;}
-
-            var SSE = 0, SST = 0;
-            var d = (sum[8] - a * Math.cos(c) * sum[7] - a * Math.sin(c) * sum[6]) / n;
-            var yg = sum[8] / n;
-            for (i = 0; i < data.length; i++) {
-                x = data[i][0];
-                y = data[i][1];
-                yf = a * Math.sin(2 * Math.PI * x / period + c) + d;
-                SSE += (y - yf) * (y - yf);
-                SST += (y - yg) * (y - yg);}
-
-            for (i = 0; i < data.length; i++) {
-                x = data[i][0];
-                yf = a * Math.sin(2 * Math.PI * x / period + c) + d;
-                var coordinate = [x, yf];
-                results.push(coordinate);}
-
-            var corr = Math.sqrt(1 - SSE / SST) * Math.sqrt(1 - SSE / SST);
-            var corrstring = 'r^2 = ' + corr.toFixed(3);
-            var string = 'y = ' + a.toExponential(2) +
-                         '\\cdot \\sin \\left( \\frac{2 \\pi}{' +
-                         period.toExponential(2) + '} \\cdot x + ' +
-                         c.toExponential(2) + ' \\right) + ' +
-                         d.toExponential(2);
-
-            return {equation: [a, c], points: results,
-                    string: prepare_for_MathJax(string),
-                    corrstring: prepare_for_MathJax(corrstring)};
-}
-
+*/
 let lineChart;
 
 const GazeViewer = React.forwardRef(({ ...props }, ref) => {
@@ -213,37 +135,38 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
 
 
+
+
     const taskArr = React.useMemo(() => {
         if (data) {
+            console.log("원본json",data);
             // console.log(data);
-            let newarr = [];
+            let newData = [];
+     
+
             for (let i = 0; i < data.screeningObjectList.length; i++) {
-
-
-
                 let obj = {
                     ...data.screeningObjectList[i],
                     gazeData: data.taskArr[i]
                 };
-                newarr.push(obj);
+                newData.push(obj);
             }
 
-
+            
             const MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
             const pixel_per_cm = data.monitorInform.MONITOR_PX_PER_CM; //1cm 당 pixel
             const degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
             const w = data.screenW;
             const h = data.screenH;
 
-
-     
-
-            for (let i = 0; i < newarr.length; i++) {
-                const task = newarr[i];
+            //newData 의 trial 수만큼 반복
+            for (let i = 0; i < newData.length; i++) {
+                const task = newData[i];
            
                 const type = task.type;
 
 
+                //gazeraw에 degree로 변환작업
                 let gazeArr = task.gazeData;
                 for (let j = 0; j < gazeArr.length; j++) {
                     let target_pixels = {
@@ -342,131 +265,142 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 }
 
 
-              
+                let A_ydegree_arr=[];
+                let A_xdegree_arr=[];
+                let B_ydegree_arr=[];
+                let B_xdegree_arr=[];
 
-                let diff_xdegree_arr=[];
-                let diff_ydegree_arr=[];
-                let diff_xdegree_linear_arr = [];
-                let diff_xdegree_polynomial_arr = [];
-                let ydegree_arr=[];
-                let xdegree_arr=[];
+                task.stabletime={
+                    A_s:null,
+                    A_e:null,
+                    B_s:null,
+                    B_e:null,
+                }
 
+                //#@!
                 for (let j = 0; j < gazeArr.length; j++) {
                     if (type === 'teleport') {
-                        if(gazeArr[j].relTime*1 >= 1 &&
+                        if(gazeArr[j].relTime*1 >= (task.startWaitTime*1-2) &&
                             gazeArr[j].relTime*1 <= task.startWaitTime*1){
-                            
-                                if(gazeArr[j].diff_xdegree!==null){
-                                    diff_xdegree_arr.push(gazeArr[j].diff_xdegree);
-                                    xdegree_arr.push(gazeArr[j].xdegree);
-                                    // diff_xdegree_linear_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
+                                if(task.stabletime.A_s===null){
+                                    task.stabletime.A_s=gazeArr[j].relTime;
                                 }
-                                if(gazeArr[j].diff_ydegree!==null){
-                                    diff_ydegree_arr.push(gazeArr[j].diff_ydegree);
-                                    ydegree_arr.push(gazeArr[j].ydegree);
+                                task.stabletime.A_e=gazeArr[j].relTime;
 
+
+                                if(gazeArr[j].xdegree!==null){
+                                    A_xdegree_arr.push(gazeArr[j].xdegree);
+                          
+                                }
+                                if(gazeArr[j].ydegree!==null){
+                    
+                                    A_ydegree_arr.push(gazeArr[j].ydegree);
+                               
                                 }
                         }
-
-                        if(gazeArr[j].relTime*1 >= 0 &&
-                            gazeArr[j].relTime*1 <= task.startWaitTime*1){
-                                diff_xdegree_linear_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
-                        }
-
-                    }
-                    else if(type==='circular'){
-                        if(gazeArr[j].relTime*1 >= task.startWaitTime*1 &&
-                            gazeArr[j].relTime*1 <= (task.startWaitTime*1 + task.duration*1) ){
-                            diff_xdegree_polynomial_arr.push([gazeArr[j].relTime,gazeArr[j].diff_xdegree]);
-                        }
-                    }
-                }
-                task.diff_xdegree_arr= diff_xdegree_arr;
-                task.diff_ydegree_arr = diff_ydegree_arr;
-                task.mean_diff_xdegree = (diff_xdegree_arr.length && mean(diff_xdegree_arr)) || null;
-                task.mean_diff_ydegree = (diff_ydegree_arr.length && mean(diff_ydegree_arr)) || null;
-                task.std_diff_xdegree = (diff_xdegree_arr.length && std(diff_xdegree_arr)) || null;
-                task.std_diff_ydegree = (diff_ydegree_arr.length && std(diff_ydegree_arr)) || null;
-                task.mean_ydegree = (ydegree_arr.length && mean(ydegree_arr)) ||null;
-                task.mean_xdegree = (xdegree_arr.length && mean(xdegree_arr)) ||null;
-                task.std_ydegree =(ydegree_arr.length && std(ydegree_arr)) ||null;
-                task.std_xdegree =(xdegree_arr.length && std(xdegree_arr)) ||null;
-
-                task.stabletime = {
-                    s:1,
-                    e:task.startWaitTime*1,
-                    sx_index:null,
-                    ex_index:null,                   
-                    sy_index:null,
-                    ey_index:null 
-                }
-
-                diff_xdegree_arr=[];
-                diff_ydegree_arr=[];
-                //1.5 +- 표준편차 사이
-              
-                for (let j = 0; j < gazeArr.length; j++) {
-                    if (type === 'teleport') {
-                        if(gazeArr[j].relTime*1 >= 1 &&
-                            gazeArr[j].relTime*1 <= task.startWaitTime*1){
-                            
-                                if(gazeArr[j].diff_xdegree!==null){
-                                    if(Math.abs(gazeArr[j].diff_xdegree)<1.5*task.std_diff_xdegree){
-                                        // diff_xdegree_arr.push(gazeArr[j].diff_xdegree);
-                                        gazeArr[j].valid_xdiff = true;
-                                        if(!task.stabletime.sx_index){
-                                            task.stabletime.sx_index=j;
-                                        }
-                                        task.stabletime.ex_index=j;
-
-                                       
-                                    }
-                                    else{
-                                        gazeArr[j].valid_xdiff = false;
-                                    }
-
+                        else if(gazeArr[j].relTime*1 >= (task.startWaitTime*1 + task.duration*1 - 2)
+                            &&gazeArr[j].relTime*1 <= (task.startWaitTime*1 + task.duration*1)){
+                                if(task.stabletime.B_s===null){
+                                    task.stabletime.B_s=gazeArr[j].relTime;
                                 }
-                                if(gazeArr[j].diff_ydegree!==null){
-                                    if(Math.abs(gazeArr[j].diff_ydegree)<1.5*task.std_diff_ydegree){
-                                        // diff_ydegree_arr.push(gazeArr[j].diff_ydegree);
-                                        gazeArr[j].valid_ydiff = true;
-                                        if(!task.stabletime.sy_index){
-                                            task.stabletime.sy_index=j;
-                                        }
-                                        task.stabletime.ey_index=j;
-                                    }
-                                    else{
-                                        gazeArr[j].valid_ydiff = false;
-                                    }
+                                task.stabletime.B_e=gazeArr[j].relTime;
+
+                                if(gazeArr[j].xdegree!==null){
+                                    B_xdegree_arr.push(gazeArr[j].xdegree);
+                          
                                 }
+                                if(gazeArr[j].ydegree!==null){
+                    
+                                    B_ydegree_arr.push(gazeArr[j].ydegree);
+                               
+                                }
+
                         }
                     }
+
+
                 }
-                if(task.type==='teleport'){
-                    task.diff_xdegree_linear_arr = diff_xdegree_linear_arr;
-                    // let result=mean(diff_xdegree_linear_arr);
-                    // task.res_diff_xdegree_arr_mean=result;
-                }
-                else if(task.type==='circular'){
+         
+                task.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) ||null;
+                task.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) ||null;
+                task.A_std_ydegree =(A_ydegree_arr.length && std(A_ydegree_arr)) ||null;
+                task.A_std_xdegree =(A_xdegree_arr.length && std(A_xdegree_arr)) ||null;
                
-                    // task.diff_xdegree_arr = diff_xdegree_polynomial_arr;
-                    // // let result=sineRegression(diff_xdegree_polynomial_arr,task.duration);
-                    // let result=regression.polynomial(diff_xdegree_polynomial_arr,{ order : 5, precision: 2 });
-                    // task.res_diff_xdegree_polynomial_arr=result;
+
+                task.B_mean_ydegree = (B_ydegree_arr.length && mean(B_ydegree_arr)) ||null;
+                task.B_mean_xdegree = (B_xdegree_arr.length && mean(B_xdegree_arr)) ||null;
+                task.B_std_ydegree =(B_ydegree_arr.length && std(B_ydegree_arr)) ||null;
+                task.B_std_xdegree =(B_xdegree_arr.length && std(B_xdegree_arr)) ||null;
+               
+
+                task.sample={
+                    start_position : {
+                        x:task.A_mean_xdegree,
+                        y:task.A_mean_ydegree
+                    },
+                    end_position: {
+                        x:task.B_mean_xdegree,
+                        y:task.B_mean_ydegree
+                    },
+                    saccade_distance:distance([task.A_mean_xdegree,task.A_mean_ydegree],[task.B_mean_xdegree,task.B_mean_ydegree]),
+                    fixation_threshold:0.4,
+                    startTime:null,
+                    endTime:null,
+                    saccade_delay:null,
+                    saccade_duration:null,
+                    saccade_speed:null,
+
+                    fixation_stability : null,               
                 }
 
+                
+                for (let j = 0; j < gazeArr.length; j++) {
+                    
+                    if(j<gazeArr.length-3 && gazeArr[j].relTime*1 >= task.startWaitTime*1){
+                        //gazeArr[j].xdegree , gazeArr[j].ydegree
+                        //와 거리가
+                        // 0.5 이상인친구가
+                        //A_mean_xdegree ,A_mean_ydegree 
+                        if(                
+                        distance([gazeArr[j].xdegree,gazeArr[j].ydegree],[task.A_mean_xdegree,task.A_mean_ydegree])>=task.sample.fixation_threshold
+                        &&distance([gazeArr[j+1].xdegree,gazeArr[j+1].ydegree],[task.A_mean_xdegree,task.A_mean_ydegree])>=task.sample.fixation_threshold
+                        &&distance([gazeArr[j+2].xdegree,gazeArr[j+2].ydegree],[task.A_mean_xdegree,task.A_mean_ydegree])>=task.sample.fixation_threshold){
+                            task.sample.startTime=gazeArr[j].relTime*1;
+                            task.sample.saccade_delay = gazeArr[j].relTime*1 - task.startWaitTime*1;      
+                            break;
+                        }
+                    }
+                    
+                }
 
+                for (let j = 0; j < gazeArr.length; j++) {
+                    
+                    if(j<gazeArr.length-3 && task.sample.startTime!==null&& gazeArr[j].relTime*1 >= task.sample.startTime*1){
+                        //gazeArr[j].xdegree , gazeArr[j].ydegree
+                        //와 거리가
+                        // 0.5 이상인친구가
+                        //A_mean_xdegree ,A_mean_ydegree 
+                        if(                
+                        distance([gazeArr[j].xdegree,gazeArr[j].ydegree],[task.B_mean_xdegree,task.B_mean_ydegree])<=task.sample.fixation_threshold
+                        &&distance([gazeArr[j+1].xdegree,gazeArr[j+1].ydegree],[task.B_mean_xdegree,task.B_mean_ydegree])<=task.sample.fixation_threshold
+                        &&distance([gazeArr[j+2].xdegree,gazeArr[j+2].ydegree],[task.B_mean_xdegree,task.B_mean_ydegree])<=task.sample.fixation_threshold){
+                            task.sample.endTime=gazeArr[j].relTime*1;
+                            task.sample.saccade_duration = task.sample.endTime-task.sample.startTime;
+                            task.sample.saccade_speed = task.sample.saccade_distance / task.sample.saccade_duration;
 
+                            break;
+                        }
+                    }
+                    
+                }
 
-                //teleport의 경우
-                //1초부터 ~ startWaitTime 전까지의 평균 diff degree
-                //std 를 구해서
-                //1.5std 밖에 있는녀석을 제외하고, 평균을 다시 구하고
-                //
+             
             }
 
-            console.log("newarr", newarr);
-            return newarr;
+
+            console.log("newData", newData);
+     
+            return newData;
         }
         else {
             return null;
@@ -475,7 +409,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
     const endTime = React.useMemo(() => {
         if (taskArr && taskArr[taskNumber]) {
-            console.log("지금꺼정보", taskArr[taskNumber]);
+            // console.log("지금꺼정보", taskArr[taskNumber]);
 
             return (taskArr[taskNumber].relativeEndTime).toFixed(2);
         }
@@ -751,7 +685,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
     const Goptions = React.useMemo(()=>{
 
-        console.log(taskArr[taskNumber]);
+        // console.log(taskArr[taskNumber]);
         //95% 신뢰구간 1.96
         // 99% 신뢰구간 2.58
 
@@ -769,10 +703,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             borderColor: "green",
             backgroundColor: "rgba(0,255,0,0.05)",
             borderWidth: 1,
-            xMin : taskArr[taskNumber].stabletime.s*1000,
-            xMax : taskArr[taskNumber].stabletime.e*1000,
-            yMin : taskArr[taskNumber].mean_xdegree-taskArr[taskNumber].std_xdegree*2,
-            yMax : taskArr[taskNumber].mean_xdegree+taskArr[taskNumber].std_xdegree*2
+            xMin : taskArr[taskNumber].stabletime.A_s*1000,
+            xMax : taskArr[taskNumber].stabletime.A_e*1000,
+            yMin : taskArr[taskNumber].A_mean_xdegree-taskArr[taskNumber].A_std_xdegree*2,
+            yMax : taskArr[taskNumber].A_mean_xdegree+taskArr[taskNumber].A_std_xdegree*2
           },
           {
             drawTime: "afterDatasetsDraw", // (default)
@@ -784,15 +718,61 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             borderColor: "rgb(255,127,0)",
             backgroundColor: "rgba(255,127,0,0.05)",
             borderWidth: 1,
-            xMin : taskArr[taskNumber].stabletime.s*1000,
-            xMax : taskArr[taskNumber].stabletime.e*1000,
-            yMin : taskArr[taskNumber].mean_ydegree-taskArr[taskNumber].std_ydegree*2,
-            yMax : taskArr[taskNumber].mean_ydegree+taskArr[taskNumber].std_ydegree*2
+            xMin : taskArr[taskNumber].stabletime.A_s*1000,
+            xMax : taskArr[taskNumber].stabletime.A_e*1000,
+            yMin : taskArr[taskNumber].A_mean_ydegree-taskArr[taskNumber].A_std_ydegree*2,
+            yMax : taskArr[taskNumber].A_mean_ydegree+taskArr[taskNumber].A_std_ydegree*2
 
-          }
+          }, // A지점
+          {
+            drawTime: "afterDatasetsDraw", // (default)
+            type: "box",
+            mode: "horizontal",
+            yScaleID: "degree",
+            xScaleID: "timeid",
+            // value: '7.5',
+            borderColor: "green",
+            backgroundColor: "rgba(0,255,0,0.05)",
+            borderWidth: 1,
+            xMin : taskArr[taskNumber].stabletime.B_s*1000,
+            xMax : taskArr[taskNumber].stabletime.B_e*1000,
+            yMin : taskArr[taskNumber].B_mean_xdegree-taskArr[taskNumber].B_std_xdegree*2,
+            yMax : taskArr[taskNumber].B_mean_xdegree+taskArr[taskNumber].B_std_xdegree*2
+          },
+          {
+            drawTime: "afterDatasetsDraw", // (default)
+            type: "box",
+            mode: "horizontal",
+            yScaleID: "degree",
+            xScaleID: "timeid",
+            // value: '7.5',
+            borderColor: "rgb(255,127,0)",
+            backgroundColor: "rgba(255,127,0,0.05)",
+            borderWidth: 1,
+            xMin : taskArr[taskNumber].stabletime.B_s*1000,
+            xMax : taskArr[taskNumber].stabletime.B_e*1000,
+            yMin : taskArr[taskNumber].B_mean_ydegree-taskArr[taskNumber].B_std_ydegree*2,
+            yMax : taskArr[taskNumber].B_mean_ydegree+taskArr[taskNumber].B_std_ydegree*2
+
+          }, //B지점
+          {
+            drawTime: "afterDatasetsDraw", // (default)
+            type: "box",
+            mode: "vertical",
+            yScaleID: "degree",
+            xScaleID: "timeid",
+            // value: '7.5',
+            borderColor: "red",
+            backgroundColor: "rgba(255,0,0,0.05)",
+            borderWidth: 1,
+            xMin : taskArr[taskNumber].sample.startTime*1000,
+            xMax : taskArr[taskNumber].sample.endTime*1000,
+            yMin : 0,
+            yMax : Math.max(taskArr[taskNumber].B_mean_xdegree,taskArr[taskNumber].B_mean_ydegree)
+          },
     ];
         
-          console.log("annotation",annotation);
+        //   console.log("annotation",annotation);
 
         return {
         plugins: {
