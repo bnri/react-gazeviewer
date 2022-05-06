@@ -5,7 +5,7 @@ import { Line } from "react-chartjs-2"
 import "chartjs-chart-box-and-violin-plot/build/Chart.BoxPlot.js";
 import "chartjs-plugin-datalabels";
 import "chartjs-plugin-annotation";
-
+import { SVD } from 'svd-js'
 import {
     mean, std, distance,
     // atan2, chain, derivative, e, evaluate, log, pi, pow, round, sqrt
@@ -272,7 +272,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 //분석 하기..
 
 
-                if (type === 'teleport' && task.analysis.type==="saccade") {
+                if (task.analysis.type==="saccade") {
                 
 
                     let A_ydegree_arr = [];
@@ -485,7 +485,40 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     
                    
                 }
+                else if(task.analysis.type==='pursuit'){
 
+                    task.sample={
+
+                    }
+                    let rotation_dataset=[];
+                    for (let j = 0; j < gazeArr.length; j++) {
+
+                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1) &&
+                            gazeArr[j].relTime * 1 <= (task.relativeEndTime-task.endWaitTime * 1) ) {
+                            
+                            rotation_dataset.push([gazeArr[j].xdegree,gazeArr[j].ydegree ]);
+                            //startWaitTime  ~  relativeEndTime - endWaitTime 
+
+                            //startWaitTime 
+
+                        }
+                    }
+                    const { u, v, q } = SVD(rotation_dataset);
+
+                    task.rotation_dataset = {
+                        data:rotation_dataset,
+                        u:u, //1202 * 2
+                        v:v, //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
+                        q:q, // 1*2
+                        mq: [q[0]*Math.sqrt(2/rotation_dataset.length),q[1]*Math.sqrt(2/rotation_dataset.length)] //(x/q[0])^2 + (y/q[1])^2 = 1 타원
+                    }
+                    //소장님과 토론할것
+
+                    //  [ [q[0],0][0,q[1]] ]  //만들면좋음
+
+                    // 루트 1/1202 * 
+                    
+                }
 
             }
 
@@ -554,7 +587,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 }
                 console.log("saveData", saveData);
             }
-
+            else if(data.screeningType==='pursuit'){
+                console.log("분석 pursuit")
+               
+            }
             
             
             console.log("newData", newData);

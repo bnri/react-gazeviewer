@@ -17,7 +17,8 @@
     "chartjs-plugin-annotation": "^0.5.7",
     "chartjs-plugin-datalabels": "^1.0.0",
     "mathjs": "^10.5.0",
-    "react-chartjs-2": "^2.11.1"
+    "react-chartjs-2": "^2.11.1",
+    "svd-js": "^1.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
