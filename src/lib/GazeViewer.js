@@ -7,13 +7,20 @@ import "chartjs-plugin-datalabels";
 import "chartjs-plugin-annotation";
 import { SVD } from 'svd-js'
 import {
-    mean, std, distance,
+    mean, std, distance,transpose,multiply
     // atan2, chain, derivative, e, evaluate, log, pi, pow, round, sqrt
 } from 'mathjs'
 // console.log(mean);
 // console.log(std);
 // console.log(math);
 // console.log(regression);
+
+//https://github.com/Meakk/ellipse-js
+
+//https://stackoverflow.com/questions/47873759/how-to-fit-a-2d-ellipse-to-given-points
+//다시 이거로 합시다
+//https://stackoverflow.com/questions/58832206/draw-ellipse-with-5points-in-canvas
+//이거ㅏ로 해봅시다
 
 //https://stackoverflow.com/questions/16716302/how-do-i-fit-a-sine-curve-to-my-data-with-pylab-and-numpy
 
@@ -491,26 +498,81 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
                     }
                     let rotation_dataset=[];
+                    let rdx=[];
+                    let rdy=[];
+                    let homogeneous_linear_dataset=[];
                     for (let j = 0; j < gazeArr.length; j++) {
 
                         if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1) &&
                             gazeArr[j].relTime * 1 <= (task.relativeEndTime-task.endWaitTime * 1) ) {
                             
-                            rotation_dataset.push([gazeArr[j].xdegree,gazeArr[j].ydegree ]);
+                          
                             //startWaitTime  ~  relativeEndTime - endWaitTime 
+                            rdx.push(gazeArr[j].xdegree);
+                            rdy.push(gazeArr[j].ydegree);
+                            //startWaitTime 
+                            // ax^2 + bxy + cy^2 + dx + ey + f = 0; //식을두고,
+                            // x^2 , xy , y^2 , x , y , 1
+                            homogeneous_linear_dataset.push([
+                                gazeArr[j].xdegree*gazeArr[j].xdegree, //X^2
+                                gazeArr[j].xdegree*gazeArr[j].ydegree, //XY
+                                gazeArr[j].ydegree*gazeArr[j].ydegree, // Y^2
+                                gazeArr[j].xdegree, //X
+                                gazeArr[j].ydegree, //Y
+                                1])
+                            
+                        }
+                    }
+                    let rdxmean = mean(rdx);
+                    let rdymean = mean(rdy);
+                    for (let j = 0; j < gazeArr.length; j++) {
 
+                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1) &&
+                            gazeArr[j].relTime * 1 <= (task.relativeEndTime-task.endWaitTime * 1) ) {
+                            
+                            rotation_dataset.push([gazeArr[j].xdegree-rdxmean,gazeArr[j].ydegree-rdymean ]);
+                            //startWaitTime  ~  relativeEndTime - endWaitTime 
+       
                             //startWaitTime 
 
                         }
                     }
-                    const { u, v, q } = SVD(rotation_dataset);
 
+
+                    const { u, v, q } = SVD(rotation_dataset);
+                    const resnew = SVD(homogeneous_linear_dataset);
+                    const dialogq = [
+                        [resnew.q[0],0,0,0,0,0],
+                        [0,resnew.q[1],0,0,0,0],
+                        [0,0,resnew.q[2],0,0,0],
+                        [0,0,0,resnew.q[3],0,0],
+                        [0,0,0,0,resnew.q[4],0],
+                        [0,0,0,0,0,resnew.q[5]],
+                    ]
+                    const vt =transpose(resnew.v);
+                    const ut =transpose(resnew.u);
+                    
                     task.rotation_dataset = {
+                        rdxmean : rdxmean,
+                        rdymean: rdymean,
                         data:rotation_dataset,
                         u:u, //1202 * 2
                         v:v, //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
                         q:q, // 1*2
-                        mq: [q[0]*Math.sqrt(2/rotation_dataset.length),q[1]*Math.sqrt(2/rotation_dataset.length)] //(x/q[0])^2 + (y/q[1])^2 = 1 타원
+                      
+                        mq: [q[0]*Math.sqrt(2/rotation_dataset.length),q[1]*Math.sqrt(2/rotation_dataset.length)], //(x/q[0])^2 + (y/q[1])^2 = 1 타원
+                        new:{
+                            homogeneous_linear_dataset:homogeneous_linear_dataset,
+                            u1:resnew.u,
+                            v1:resnew.v,
+                            q1:resnew.q,
+                            dialogq:dialogq,
+                            v1t : vt,
+                            dataset:"u1*dialogq*v1t",
+                            getdataset:multiply(multiply(resnew.u,dialogq),vt),
+                            I_byv:multiply(vt,resnew.v),
+                            I_byu:multiply(ut,resnew.u)
+                        }
                     }
                     //소장님과 토론할것
 
@@ -679,28 +741,30 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
         const task = taskArr[taskNumber];
         if (!task) return;
 
-
+        
         const type = task.type;
         const MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
+        const target_size= MONITOR_PX_PER_CM * task.target_size;
+
         if (type === 'teleport') {
             if (nowTime * 1 < task.startWaitTime * 1) {
                 //startcoord
-                set_targetLeft(task.startCoord.x + 'px');
-                set_targetTop(task.startCoord.y + 'px');
+                set_targetLeft((task.startCoord.x - target_size/2) + 'px');
+                set_targetTop((task.startCoord.y - target_size/2) + 'px');
             }
             else if (nowTime * 1 < (task.duration * 1 + task.startWaitTime * 1)) {
-                set_targetLeft(task.endCoord.x + 'px');
-                set_targetTop(task.endCoord.y + 'px');
+                set_targetLeft((task.endCoord.x -target_size/2)+ 'px');
+                set_targetTop((task.endCoord.y -target_size/2)+ 'px');
             }
             else {
                 //endcoord
                 if (task.isReturn) {
-                    set_targetLeft(task.startCoord.x + 'px');
-                    set_targetTop(task.startCoord.y + 'px');
+                    set_targetLeft((task.startCoord.x - target_size/2) + 'px');
+                    set_targetTop((task.startCoord.y -target_size/2) +'px');
                 }
                 else {
-                    set_targetLeft(task.endCoord.x + 'px');
-                    set_targetTop(task.endCoord.y + 'px');
+                    set_targetLeft((task.endCoord.x -target_size/2)+ 'px');
+                    set_targetTop((task.endCoord.y -target_size/2)+ 'px');
                 }
 
             }
@@ -714,9 +778,11 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 const cosTheta = Math.cos(task.startDegree * radian);
                 const sineTheta = Math.sin(task.startDegree * radian);
                 let sc = {
-                    x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM,
-                    y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM
+                    x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - target_size/2,
+                    y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM -target_size/2
                 }
+                // console.log(sc);
+                // console.log(target_size);
                 set_targetLeft(sc.x + 'px');
                 set_targetTop(sc.y + 'px');
             }
@@ -728,8 +794,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 const cosTheta = Math.cos(nowDegree * radian);
                 const sineTheta = Math.sin(nowDegree * radian);
                 let nc = {
-                    x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM,
-                    y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM
+                    x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - target_size/2,
+                    y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - target_size/2
                 }
                 set_targetLeft(nc.x + 'px');
                 set_targetTop(nc.y + 'px');
@@ -739,8 +805,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 const cosTheta = Math.cos(task.endDegree * radian);
                 const sineTheta = Math.sin(task.endDegree * radian);
                 let ec = {
-                    x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM,
-                    y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM
+                    x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - target_size/2,
+                    y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - target_size/2
                 }
                 set_targetLeft(ec.x + 'px');
                 set_targetTop(ec.y + 'px');
@@ -1294,6 +1360,58 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                                 top: targetTop
                             }}
                         />
+
+                        {
+                            taskArr[taskNumber]&&(()=>{
+                                // console.log("asfasf")
+                                const task = taskArr[taskNumber];
+                                // console.log(task);
+                                if(task.type==='circular'){
+                                    return (<div className="originCircle" style={{
+                                        left:`${task.centerCoord.x-data.monitorInform.MONITOR_PX_PER_CM*task.distance}px`,
+                                        top:`${task.centerCoord.y-data.monitorInform.MONITOR_PX_PER_CM*task.distance}px`,
+                                        width:`${data.monitorInform.MONITOR_PX_PER_CM*task.distance*2}px`,
+                                        height:`${data.monitorInform.MONITOR_PX_PER_CM*task.distance*2}px`,
+                                    }}></div>)
+                                }
+                                else{
+                                    return null;
+                                }
+
+                            })()
+                        }
+       {
+                            taskArr[taskNumber]&&(()=>{
+                                // console.log("asfasf")
+                                const task = taskArr[taskNumber];
+                                if(!task.rotation_dataset) return null;
+                                // console.log(task);
+                                const xoffset = task.rotation_dataset.rdxmean;
+                                const yoffset = task.rotation_dataset.rdymean;
+
+                                const width_degree = task.rotation_dataset.mq[0] || null;
+                                const height_degree = task.rotation_dataset.mq[1] || null;
+                                // console.log("width_degree",width_degree);
+                                const width_cm = Math.tan(width_degree*Math.PI/180)* data.defaultZ;
+                                const height_cm = Math.tan(height_degree*Math.PI/180)* data.defaultZ;
+                                // console.log("width_cm",width_cm);
+                                const width_px = width_cm * data.monitorInform.MONITOR_PX_PER_CM;
+                                const height_px = height_cm * data.monitorInform.MONITOR_PX_PER_CM;
+
+                                if(task.type==='circular'){
+                                    return (<div className="realCircle" style={{
+                                        left:`${task.centerCoord.x-width_px + xoffset}px`,
+                                        top:`${task.centerCoord.y-height_px + yoffset}px`,
+                                        width:`${width_px*2}px`,
+                                        height:`${height_px*2}px`,
+                                    }}></div>)
+                                }
+                                else{
+                                    return null;
+                                }
+
+                            })()
+                        }
 
 
                         <div className="GC-canvasWrapper" style={{ width: '100%', height: '100%' }}>
