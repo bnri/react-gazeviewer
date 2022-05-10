@@ -441,12 +441,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                                 break;
                             }
                         }
-
-
                     }
 
+                    
                     for (let j = 0; j < gazeArr.length; j++) {
-
                         if (j < gazeArr.length - 3 && task.sample.startTime !== null && gazeArr[j].relTime * 1 >= task.sample.startTime * 1) {
                             //gazeArr[j].xdegree , gazeArr[j].ydegree
                             //와 거리가
@@ -463,12 +461,11 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                                 break;
                             }
                         }
-
-
                     }
 
-                    // 여기서도 제외를 해야하는데...
 
+
+                    // 여기서도 제외를 해야하는데...
                     let B_xydiff_arr = [];
                     for (let j = 0; j < gazeArr.length; j++) {
 
@@ -519,7 +516,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                                 gazeArr[j].ydegree*gazeArr[j].ydegree, // Y^2
                                 gazeArr[j].xdegree, //X
                                 gazeArr[j].ydegree, //Y
-                                1])
+                                ])
                             
                         }
                     }
@@ -540,17 +537,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
 
                     const { u, v, q } = SVD(rotation_dataset);
-                    const resnew = SVD(homogeneous_linear_dataset);
-                    const dialogq = [
-                        [resnew.q[0],0,0,0,0,0],
-                        [0,resnew.q[1],0,0,0,0],
-                        [0,0,resnew.q[2],0,0,0],
-                        [0,0,0,resnew.q[3],0,0],
-                        [0,0,0,0,resnew.q[4],0],
-                        [0,0,0,0,0,resnew.q[5]],
-                    ]
-                    const vt =transpose(resnew.v);
-                    const ut =transpose(resnew.u);
+                    // const resnew = SVD(homogeneous_linear_dataset,false,true);
+                
                     
                     task.rotation_dataset = {
                         rdxmean : rdxmean,
@@ -561,18 +549,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                         q:q, // 1*2
                       
                         mq: [q[0]*Math.sqrt(2/rotation_dataset.length),q[1]*Math.sqrt(2/rotation_dataset.length)], //(x/q[0])^2 + (y/q[1])^2 = 1 타원
-                        new:{
-                            homogeneous_linear_dataset:homogeneous_linear_dataset,
-                            u1:resnew.u,
-                            v1:resnew.v,
-                            q1:resnew.q,
-                            dialogq:dialogq,
-                            v1t : vt,
-                            dataset:"u1*dialogq*v1t",
-                            getdataset:multiply(multiply(resnew.u,dialogq),vt),
-                            I_byv:multiply(vt,resnew.v),
-                            I_byu:multiply(ut,resnew.u)
-                        }
+                        //sqrt(2/N) * U * diag(S)  회전을 제외 U
+                        
                     }
                     //소장님과 토론할것
 
@@ -873,8 +851,23 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             target_y: [],
             eye_x: [],
             eye_y: [],
-
+            fit_x:[],
+            fit_y:[]
         }
+        
+        const type=task.analysis.type;
+        let pursuit_attribute={
+        };
+
+        if(type==='pursuit'){
+            pursuit_attribute.a = task.rotation_dataset.mq[0];
+            pursuit_attribute.b = task.rotation_dataset.mq[1];
+            pursuit_attribute.xoffset =  task.rotation_dataset.rdxmean;
+            pursuit_attribute.yoffset =  task.rotation_dataset.rdymean;
+            pursuit_attribute.jugi = (task.relativeEndTime - task.endWaitTime-task.startWaitTime)/task.analysis.rotationCount;
+            pursuit_attribute.direction = task.analysis.direction;
+        }
+
         // console.log("gazeArr",gazeArr);
         for (let i = 0; i < gazeArr.length; i++) {
             if (gazeArr[i].relTime <= nowTime * 1 && gazeArr[i].RPOGV) {
@@ -896,24 +889,37 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     x: gazeArr[i].relTime * 1000,
                     y: gazeArr[i].ydegree ? gazeArr[i].ydegree : 0
                 }
+                let fit_xdata={};
+                let fit_ydata={};
+                if(type==='pursuit'){
+                    
+                    fit_xdata.x = gazeArr[i].relTime * 1000;
+                    fit_ydata.x = gazeArr[i].relTime * 1000;
+                    if(pursuit_attribute.direction==='clockwise'){
+                        fit_xdata.y = pursuit_attribute.a*Math.sin(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.xoffset;
+                        fit_ydata.y = -pursuit_attribute.b*Math.cos(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.yoffset;
+                    }
+                    else if(pursuit_attribute.direction==='anticlockwise'){
+                        fit_xdata.y = -pursuit_attribute.a*Math.sin(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.xoffset;
+                        fit_ydata.y = -pursuit_attribute.b*Math.cos(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.yoffset;
+                    }
 
+                    Gdata.fit_x.push(fit_xdata);
+                    Gdata.fit_y.push(fit_ydata);
+                }
+           
 
 
                 Gdata.target_x.push(target_xdata);
                 Gdata.target_y.push(target_ydata);
                 Gdata.eye_x.push(eye_xdata);
                 Gdata.eye_y.push(eye_ydata);
-
+                // if(fit_x)Gdata.fit_x.push(fit_x);
 
             }
         }
 
-        // let lasttarget_xdata={
-        //     x:gazeArr[gazeArr.length-1].relTime*1000,
-        //     y:gazeArr[gazeArr.length-1].target_xdegree?gazeArr[gazeArr.length-1].target_xdegree:0
-        // }
-
-        // Gdata.target_x.push(lasttarget_xdata);
+     
 
 
 
@@ -923,7 +929,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             lineChart.chartInstance.data.datasets[1].data = Gdata.eye_x;
             lineChart.chartInstance.data.datasets[2].data = Gdata.target_y;
             lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y;
-
+            lineChart.chartInstance.data.datasets[4].data = Gdata.fit_x;
+            lineChart.chartInstance.data.datasets[5].data = Gdata.fit_y;
             // if(equation){
             //     lineChart.chartInstance.data.datasets[4].data = Gdata.estimate;  
             // }
@@ -1254,9 +1261,22 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             { //estimate
                 data: [],
                 steppedLine: "before",
-                label: "estimate",
-                borderColor: "rgba(255,255,0,0.7)",//"#0000ff",
-                backgroundColor: 'rgba(255,255,0,0.7)',
+                label: "fit H",
+                borderColor: "rgba(112,172,143,0.65)",//"#0000ff",
+                backgroundColor: 'rgba(112,172,143,0.65)',
+                fill: false,
+                yAxisID: "degree",
+                xAxisID: "timeid",
+                borderWidth: 1.5,
+                pointRadius: 0.3, //데이터 포인터크기
+                pointHoverRadius: 2, //hover 데이터포인터크기
+            },
+            { //estimate
+                data: [],
+                steppedLine: "before",
+                label: "fit V",
+                borderColor: "rgba(222,128,143,0.65)",//"#0000ff",
+                backgroundColor: 'rgba(222,128,143,0.65)',
                 fill: false,
                 yAxisID: "degree",
                 xAxisID: "timeid",
@@ -1380,14 +1400,19 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
                             })()
                         }
-       {
+                        {
                             taskArr[taskNumber]&&(()=>{
                                 // console.log("asfasf")
                                 const task = taskArr[taskNumber];
                                 if(!task.rotation_dataset) return null;
                                 // console.log(task);
-                                const xoffset = task.rotation_dataset.rdxmean;
-                                const yoffset = task.rotation_dataset.rdymean;
+                                const xoffset_degree = task.rotation_dataset.rdxmean;
+                                const yoffset_degree = task.rotation_dataset.rdymean;
+                                const xoffset_cm = Math.tan(xoffset_degree*Math.PI/180)* data.defaultZ;
+                                const yoffset_cm = Math.tan(yoffset_degree*Math.PI/180)* data.defaultZ;
+                                const xoffset_px = xoffset_cm * data.monitorInform.MONITOR_PX_PER_CM;
+                                const yoffset_px = yoffset_cm * data.monitorInform.MONITOR_PX_PER_CM;
+
 
                                 const width_degree = task.rotation_dataset.mq[0] || null;
                                 const height_degree = task.rotation_dataset.mq[1] || null;
@@ -1399,9 +1424,9 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                                 const height_px = height_cm * data.monitorInform.MONITOR_PX_PER_CM;
 
                                 if(task.type==='circular'){
-                                    return (<div className="realCircle" style={{
-                                        left:`${task.centerCoord.x-width_px + xoffset}px`,
-                                        top:`${task.centerCoord.y-height_px + yoffset}px`,
+                                    return (<div className="fitCircle" style={{
+                                        left:`${task.centerCoord.x-width_px + xoffset_px}px`,
+                                        top:`${task.centerCoord.y-height_px + yoffset_px}px`,
                                         width:`${width_px*2}px`,
                                         height:`${height_px*2}px`,
                                     }}></div>)
