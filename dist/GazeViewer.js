@@ -19,6 +19,8 @@ require("chartjs-plugin-datalabels");
 
 require("chartjs-plugin-annotation");
 
+var _svdJs = require("svd-js");
+
 var _mathjs = require("mathjs");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -47,6 +49,11 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 // console.log(std);
 // console.log(math);
 // console.log(regression);
+//https://github.com/Meakk/ellipse-js
+//https://stackoverflow.com/questions/47873759/how-to-fit-a-2d-ellipse-to-given-points
+//다시 이거로 합시다
+//https://stackoverflow.com/questions/58832206/draw-ellipse-with-5points-in-canvas
+//이거ㅏ로 해봅시다
 //https://stackoverflow.com/questions/16716302/how-do-i-fit-a-sine-curve-to-my-data-with-pylab-and-numpy
 //그나마 찾은 ㄱㅊ은것.. 머신러닝임 마찬가지로
 //https://github.com/mljs/levenberg-marquardt
@@ -284,7 +291,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         } //분석 하기..
 
 
-        if (type === 'teleport' && task.analysis.type === "saccade") {
+        if (task.analysis.type === "saccade") {
           var A_ydegree_arr = [];
           var A_xdegree_arr = [];
           var B_ydegree_arr = [];
@@ -443,6 +450,95 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           }
 
           task.sample.fixation_stability = B_xydiff_arr.length && (0, _mathjs.std)(B_xydiff_arr) || null;
+        } else if (task.analysis.type === 'pursuit') {
+          var rotation_dataset = [];
+          var rdx = [];
+          var rdy = [];
+          var homogeneous_linear_dataset = [];
+
+          for (var _j6 = 0; _j6 < gazeArr.length; _j6++) {
+            if (gazeArr[_j6].relTime * 1 >= task.startWaitTime * 1 && gazeArr[_j6].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1) {
+              //startWaitTime  ~  relativeEndTime - endWaitTime 
+              rdx.push(gazeArr[_j6].xdegree);
+              rdy.push(gazeArr[_j6].ydegree); //startWaitTime 
+              // ax^2 + bxy + cy^2 + dx + ey + f = 0; //식을두고,
+              // x^2 , xy , y^2 , x , y , 1
+
+              homogeneous_linear_dataset.push([gazeArr[_j6].xdegree * gazeArr[_j6].xdegree, //X^2
+              gazeArr[_j6].xdegree * gazeArr[_j6].ydegree, //XY
+              gazeArr[_j6].ydegree * gazeArr[_j6].ydegree, // Y^2
+              gazeArr[_j6].xdegree, //X
+              gazeArr[_j6].ydegree //Y
+              ]);
+            }
+          }
+
+          var rdxmean = (0, _mathjs.mean)(rdx);
+          var rdymean = (0, _mathjs.mean)(rdy);
+
+          for (var _j7 = 0; _j7 < gazeArr.length; _j7++) {
+            if (gazeArr[_j7].relTime * 1 >= task.startWaitTime * 1 && gazeArr[_j7].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1) {
+              rotation_dataset.push([gazeArr[_j7].xdegree - rdxmean, gazeArr[_j7].ydegree - rdymean]); //startWaitTime  ~  relativeEndTime - endWaitTime 
+              //startWaitTime 
+            }
+          }
+
+          var _SVD = (0, _svdJs.SVD)(rotation_dataset),
+              u = _SVD.u,
+              v = _SVD.v,
+              q = _SVD.q; // const resnew = SVD(homogeneous_linear_dataset,false,true);
+
+
+          task.rotation_dataset = {
+            rdxmean: rdxmean,
+            rdymean: rdymean,
+            data: rotation_dataset,
+            u: u,
+            //1202 * 2
+            v: v,
+            //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
+            q: q,
+            // 1*2
+            mq: [q[0] * Math.sqrt(2 / rotation_dataset.length), q[1] * Math.sqrt(2 / rotation_dataset.length)] //(x/q[0])^2 + (y/q[1])^2 = 1 타원
+            //sqrt(2/N) * U * diag(S)  회전을 제외 U
+
+          };
+          task.sample = {};
+          task.sample.H_radius = task.rotation_dataset.mq[0];
+          task.sample.V_radius = task.rotation_dataset.mq[1];
+          task.sample.H_offset = rdxmean;
+          task.sample.V_offset = rdymean;
+          task.sample.period = (task.relativeEndTime - task.endWaitTime - task.startWaitTime) / task.analysis.rotationCount; //소장님과 토론할것
+          //  [ [q[0],0][0,q[1]] ]  //만들면좋음
+          // 루트 1/1202 * 
+
+          var fitArr = [];
+          var diffArr = [];
+
+          for (var k = 0; k < gazeArr.length; k++) {
+            var direction = task.analysis.direction;
+            var fit = {
+              relTime: gazeArr[k].relTime
+            };
+
+            if (direction === 'clockwise') {
+              fit.xdegreefit = task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
+              fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
+            } else if (direction === 'anticlockwise') {
+              fit.xdegreefit = -task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
+              fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
+            }
+
+            fitArr.push(fit);
+
+            if (gazeArr[k].relTime >= task.startWaitTime && gazeArr[k].relTime <= task.relativeEndTime - task.endWaitTime) {
+              diffArr.push((0, _mathjs.distance)([[gazeArr[k].xdegree, gazeArr[k].ydegree], [fit.xdegreefit, fit.ydegreefit]]));
+            }
+          }
+
+          task.diffArr = diffArr;
+          task.sample.diff_fit_err = (0, _mathjs.mean)(diffArr);
+          task.fitArr = fitArr;
         }
       } //개별데이터 끝났고 다시 한다고 가정
 
@@ -463,21 +559,21 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
         for (var _i3 = 0; _i3 < newData.length; _i3++) {
           var _task = newData[_i3];
-          var direction = _task.analysis.direction;
+          var _direction = _task.analysis.direction;
 
-          if (direction === 'top') {
+          if (_direction === 'top') {
             up_saccade_delay_arr.push(_task.sample.saccade_delay);
             up_saccade_speed_arr.push(_task.sample.saccade_speed);
             up_fixation_stability_arr.push(_task.sample.fixation_stability);
-          } else if (direction === 'bottom') {
+          } else if (_direction === 'bottom') {
             down_saccade_delay_arr.push(_task.sample.saccade_delay);
             down_saccade_speed_arr.push(_task.sample.saccade_speed);
             down_fixation_stability_arr.push(_task.sample.fixation_stability);
-          } else if (direction === 'left') {
+          } else if (_direction === 'left') {
             left_saccade_delay_arr.push(_task.sample.saccade_delay);
             left_saccade_speed_arr.push(_task.sample.saccade_speed);
             left_fixation_stability_arr.push(_task.sample.fixation_stability);
-          } else if (direction === 'right') {
+          } else if (_direction === 'right') {
             right_saccade_delay_arr.push(_task.sample.saccade_delay);
             right_saccade_speed_arr.push(_task.sample.saccade_speed);
             right_fixation_stability_arr.push(_task.sample.fixation_stability);
@@ -497,8 +593,32 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           down_fixation_stability: (0, _mathjs.mean)(down_fixation_stability_arr),
           left_fixation_stability: (0, _mathjs.mean)(left_fixation_stability_arr),
           right_fixation_stability: (0, _mathjs.mean)(right_fixation_stability_arr)
-        };
+        }; // newData.saveData=saveData;
+
         console.log("saveData", saveData);
+      } else if (data.screeningType === 'pursuit') {
+        console.log("분석 pursuit");
+        var clockwiseArr = [];
+        var anticlockwiseArr = [];
+
+        for (var _i4 = 0; _i4 < newData.length; _i4++) {
+          var _task2 = newData[_i4];
+          var _direction2 = _task2.analysis.direction;
+          console.log("direction", _direction2);
+
+          if (_direction2 === 'clockwise') {
+            clockwiseArr.push(_task2.sample.diff_fit_err);
+          } else if (_direction2 === 'anticlockwise') {
+            anticlockwiseArr.push(_task2.sample.diff_fit_err);
+          }
+        }
+
+        var _saveData = {
+          clokwise_err: (0, _mathjs.mean)(clockwiseArr),
+          anticlokwise_err: (0, _mathjs.mean)(anticlockwiseArr)
+        }; //    newData.saveData=saveData;
+
+        console.log("saveData", _saveData);
       }
 
       console.log("newData", newData);
@@ -580,23 +700,24 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     if (!task) return;
     var type = task.type;
     var MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
+    var target_size = MONITOR_PX_PER_CM * task.target_size;
 
     if (type === 'teleport') {
       if (nowTime * 1 < task.startWaitTime * 1) {
         //startcoord
-        set_targetLeft(task.startCoord.x + 'px');
-        set_targetTop(task.startCoord.y + 'px');
+        set_targetLeft(task.startCoord.x - target_size / 2 + 'px');
+        set_targetTop(task.startCoord.y - target_size / 2 + 'px');
       } else if (nowTime * 1 < task.duration * 1 + task.startWaitTime * 1) {
-        set_targetLeft(task.endCoord.x + 'px');
-        set_targetTop(task.endCoord.y + 'px');
+        set_targetLeft(task.endCoord.x - target_size / 2 + 'px');
+        set_targetTop(task.endCoord.y - target_size / 2 + 'px');
       } else {
         //endcoord
         if (task.isReturn) {
-          set_targetLeft(task.startCoord.x + 'px');
-          set_targetTop(task.startCoord.y + 'px');
+          set_targetLeft(task.startCoord.x - target_size / 2 + 'px');
+          set_targetTop(task.startCoord.y - target_size / 2 + 'px');
         } else {
-          set_targetLeft(task.endCoord.x + 'px');
-          set_targetTop(task.endCoord.y + 'px');
+          set_targetLeft(task.endCoord.x - target_size / 2 + 'px');
+          set_targetTop(task.endCoord.y - target_size / 2 + 'px');
         }
       }
     } else if (type === 'circular') {
@@ -608,9 +729,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var cosTheta = Math.cos(task.startDegree * radian);
         var sineTheta = Math.sin(task.startDegree * radian);
         var sc = {
-          x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM,
-          y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM
-        };
+          x: task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - target_size / 2,
+          y: task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - target_size / 2
+        }; // console.log(sc);
+        // console.log(target_size);
+
         set_targetLeft(sc.x + 'px');
         set_targetTop(sc.y + 'px');
       } else if (nowTime * 1 < task.duration * 1 + task.startWaitTime * 1) {
@@ -623,8 +746,8 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var _sineTheta3 = Math.sin(nowDegree * radian);
 
         var nc = {
-          x: task.centerCoord.x + radius * _cosTheta3 * MONITOR_PX_PER_CM,
-          y: task.centerCoord.y - radius * _sineTheta3 * MONITOR_PX_PER_CM
+          x: task.centerCoord.x + radius * _cosTheta3 * MONITOR_PX_PER_CM - target_size / 2,
+          y: task.centerCoord.y - radius * _sineTheta3 * MONITOR_PX_PER_CM - target_size / 2
         };
         set_targetLeft(nc.x + 'px');
         set_targetTop(nc.y + 'px');
@@ -635,8 +758,8 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var _sineTheta4 = Math.sin(task.endDegree * radian);
 
         var ec = {
-          x: task.centerCoord.x + radius * _cosTheta4 * MONITOR_PX_PER_CM,
-          y: task.centerCoord.y - radius * _sineTheta4 * MONITOR_PX_PER_CM
+          x: task.centerCoord.x + radius * _cosTheta4 * MONITOR_PX_PER_CM - target_size / 2,
+          y: task.centerCoord.y - radius * _sineTheta4 * MONITOR_PX_PER_CM - target_size / 2
         };
         set_targetLeft(ec.x + 'px');
         set_targetTop(ec.y + 'px');
@@ -659,17 +782,25 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     var RPOGSIZE = RPOG_SIZE;
     var canvas = canvasRef.current;
     var rctx = canvas.getContext('2d');
-    rctx.clearRect(0, 0, w, h); // console.log("drawGaze 호출")
+    rctx.clearRect(0, 0, w, h);
+    var type = task.analysis.type; // console.log("drawGaze 호출")
 
     for (var i = 0; i < gazeArr.length; i++) {
       if (gazeArr[i].relTime <= nowTime * 1 && gazeArr[i].RPOGV) {
         // console.log("야 여기당");
         rctx.beginPath();
         rctx.lineWidth = 0.5;
-        rctx.strokeStyle = 'rgb(255,0,0,0.3)';
-        rctx.fillStyle = 'rgb(255,0,0,0.3)'; // let x = (gazeArr[i].RPOGX) * w;
+
+        if (type === "antisaccade") {
+          rctx.strokeStyle = 'rgb(0,255,0,0.3)';
+          rctx.fillStyle = 'rgb(0,255,0,0.3)';
+        } else {
+          rctx.strokeStyle = 'rgb(255,0,0,0.3)';
+          rctx.fillStyle = 'rgb(255,0,0,0.3)';
+        } // let x = (gazeArr[i].RPOGX) * w;
         // let y = (gazeArr[i].RPOGY) * h;
         // console.log("x,y",x,y);
+
 
         rctx.arc(gazeArr[i].RPOGX * w, gazeArr[i].RPOGY * h, RPOGSIZE, 0, Math.PI * 2);
         rctx.fill();
@@ -686,11 +817,14 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     // const h = data.screenH;
 
     var gazeArr = task.gazeData;
+    var fitArr = task.fitArr;
     var Gdata = {
       target_x: [],
       target_y: [],
       eye_x: [],
-      eye_y: []
+      eye_y: [],
+      fit_x: [],
+      fit_y: []
     }; // console.log("gazeArr",gazeArr);
 
     for (var i = 0; i < gazeArr.length; i++) {
@@ -713,24 +847,33 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           x: gazeArr[i].relTime * 1000,
           y: gazeArr[i].ydegree ? gazeArr[i].ydegree : 0
         };
+
+        if (task.analysis.type === 'pursuit') {
+          Gdata.fit_x.push({
+            x: gazeArr[i].relTime * 1000,
+            y: fitArr[i].xdegreefit
+          });
+          Gdata.fit_y.push({
+            x: gazeArr[i].relTime * 1000,
+            y: fitArr[i].ydegreefit
+          });
+        }
+
         Gdata.target_x.push(target_xdata);
         Gdata.target_y.push(target_ydata);
         Gdata.eye_x.push(eye_xdata);
-        Gdata.eye_y.push(eye_ydata);
+        Gdata.eye_y.push(eye_ydata); // if(fit_x)Gdata.fit_x.push(fit_x);
       }
-    } // let lasttarget_xdata={
-    //     x:gazeArr[gazeArr.length-1].relTime*1000,
-    //     y:gazeArr[gazeArr.length-1].target_xdegree?gazeArr[gazeArr.length-1].target_xdegree:0
-    // }
-    // Gdata.target_x.push(lasttarget_xdata);
-
+    }
 
     if (lineChart) {
       // console.log("Gdata.target_x",Gdata.target_x);
       lineChart.chartInstance.data.datasets[0].data = Gdata.target_x;
       lineChart.chartInstance.data.datasets[1].data = Gdata.eye_x;
       lineChart.chartInstance.data.datasets[2].data = Gdata.target_y;
-      lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y; // if(equation){
+      lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y;
+      lineChart.chartInstance.data.datasets[4].data = Gdata.fit_x;
+      lineChart.chartInstance.data.datasets[5].data = Gdata.fit_y; // if(equation){
       //     lineChart.chartInstance.data.datasets[4].data = Gdata.estimate;  
       // }
 
@@ -1057,10 +1200,26 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       //estimate
       data: [],
       steppedLine: "before",
-      label: "estimate",
-      borderColor: "rgba(255,255,0,0.7)",
+      label: "fit H",
+      borderColor: "rgba(112,172,143,0.65)",
       //"#0000ff",
-      backgroundColor: 'rgba(255,255,0,0.7)',
+      backgroundColor: 'rgba(112,172,143,0.65)',
+      fill: false,
+      yAxisID: "degree",
+      xAxisID: "timeid",
+      borderWidth: 1.5,
+      pointRadius: 0.3,
+      //데이터 포인터크기
+      pointHoverRadius: 2 //hover 데이터포인터크기
+
+    }, {
+      //estimate
+      data: [],
+      steppedLine: "before",
+      label: "fit V",
+      borderColor: "rgba(222,128,143,0.65)",
+      //"#0000ff",
+      backgroundColor: 'rgba(222,128,143,0.65)',
       fill: false,
       yAxisID: "degree",
       xAxisID: "timeid",
@@ -1151,7 +1310,51 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       left: "".concat(innerFrameLeft, "px"),
       background: "".concat(taskArr[taskNumber] && taskArr[taskNumber].backgroundColor)
     }
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, taskArr[taskNumber] && function () {
+    // console.log("asfasf")
+    var task = taskArr[taskNumber]; // console.log(task);
+
+    if (task.analysis.type === 'antisaccade') {
+      var MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
+      var target_size = MONITOR_PX_PER_CM * task.target_size;
+      var targetLeft1 = task.endCoord.x - target_size / 2 + 'px';
+
+      var _targetTop = task.endCoord.y - target_size / 2 + 'px';
+
+      var diff = task.startCoord.x - task.endCoord.x;
+      var targetLeft2 = task.startCoord.x + diff - target_size / 2 + 'px';
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+        className: "baseTarget",
+        style: {
+          width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          background: "white",
+          left: targetLeft1,
+          top: _targetTop
+        }
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        className: "baseTarget",
+        style: {
+          width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          background: "white",
+          left: targetLeft2,
+          top: _targetTop
+        }
+      }), /*#__PURE__*/_react.default.createElement("div", {
+        className: "baseTarget",
+        style: {
+          width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          background: "white",
+          left: task.startCoord.x - target_size / 2 + 'px',
+          top: task.startCoord.y - target_size / 2 + 'px'
+        }
+      }));
+    } else {
+      return null;
+    }
+  }(), /*#__PURE__*/_react.default.createElement("div", {
     className: "target",
     style: {
       width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
@@ -1160,7 +1363,57 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       left: targetLeft,
       top: targetTop
     }
-  }), /*#__PURE__*/_react.default.createElement("div", {
+  }), taskArr[taskNumber] && function () {
+    // console.log("asfasf")
+    var task = taskArr[taskNumber]; // console.log(task);
+
+    if (task.type === 'circular') {
+      return /*#__PURE__*/_react.default.createElement("div", {
+        className: "originCircle",
+        style: {
+          left: "".concat(task.centerCoord.x - data.monitorInform.MONITOR_PX_PER_CM * task.distance, "px"),
+          top: "".concat(task.centerCoord.y - data.monitorInform.MONITOR_PX_PER_CM * task.distance, "px"),
+          width: "".concat(data.monitorInform.MONITOR_PX_PER_CM * task.distance * 2, "px"),
+          height: "".concat(data.monitorInform.MONITOR_PX_PER_CM * task.distance * 2, "px")
+        }
+      });
+    } else {
+      return null;
+    }
+  }(), taskArr[taskNumber] && function () {
+    // console.log("asfasf")
+    var task = taskArr[taskNumber];
+    if (!task.rotation_dataset) return null; // console.log(task);
+
+    var xoffset_degree = task.rotation_dataset.rdxmean;
+    var yoffset_degree = task.rotation_dataset.rdymean;
+    var xoffset_cm = Math.tan(xoffset_degree * Math.PI / 180) * data.defaultZ;
+    var yoffset_cm = Math.tan(yoffset_degree * Math.PI / 180) * data.defaultZ;
+    var xoffset_px = xoffset_cm * data.monitorInform.MONITOR_PX_PER_CM;
+    var yoffset_px = yoffset_cm * data.monitorInform.MONITOR_PX_PER_CM;
+    var width_degree = task.rotation_dataset.mq[0] || null;
+    var height_degree = task.rotation_dataset.mq[1] || null; // console.log("width_degree",width_degree);
+
+    var width_cm = Math.tan(width_degree * Math.PI / 180) * data.defaultZ;
+    var height_cm = Math.tan(height_degree * Math.PI / 180) * data.defaultZ; // console.log("width_cm",width_cm);
+
+    var width_px = width_cm * data.monitorInform.MONITOR_PX_PER_CM;
+    var height_px = height_cm * data.monitorInform.MONITOR_PX_PER_CM;
+
+    if (task.type === 'circular') {
+      return /*#__PURE__*/_react.default.createElement("div", {
+        className: "fitCircle",
+        style: {
+          left: "".concat(task.centerCoord.x - width_px + xoffset_px, "px"),
+          top: "".concat(task.centerCoord.y - height_px + yoffset_px, "px"),
+          width: "".concat(width_px * 2, "px"),
+          height: "".concat(height_px * 2, "px")
+        }
+      });
+    } else {
+      return null;
+    }
+  }(), /*#__PURE__*/_react.default.createElement("div", {
     className: "GC-canvasWrapper",
     style: {
       width: '100%',

@@ -41,7 +41,33 @@ $main-color: #7367f0;
                     justify-content: center;
                     align-items: center;
                     position:relative;
+                    .originCircle{
+                        position:absolute;
+                        background:transparent;
+                        
+                        border-radius:50%;
+                        box-sizing: border-box;
+                        border:1px solid #fff;
+                        outline:none;
+                    }
+                    .fitCircle{
+                        position:absolute;
+                        background:transparent;
+                        
+                        border-radius:50%;
+                        box-sizing: border-box;
+                        border:3px solid skyblue;
+                        outline:none; 
+                    }
                     .target{
+                        position:absolute;
+                        background:#fff;
+                        border-radius:50%;
+                        box-sizing: border-box;
+                        border:none;
+                        outline:none;
+                    }
+                    .baseTarget{
                         position:absolute;
                         background:#fff;
                         border-radius:50%;

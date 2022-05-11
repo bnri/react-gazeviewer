@@ -491,9 +491,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 }
                 else if(task.analysis.type==='pursuit'){
 
-                    task.sample={
-
-                    }
+           
                     let rotation_dataset=[];
                     let rdx=[];
                     let rdy=[];
@@ -552,12 +550,53 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                         //sqrt(2/N) * U * diag(S)  회전을 제외 U
                         
                     }
+                    task.sample={
+
+                    };
+
+                    task.sample.H_radius = task.rotation_dataset.mq[0];
+                    task.sample.V_radius = task.rotation_dataset.mq[1];
+                    task.sample.H_offset = rdxmean;
+                    task.sample.V_offset = rdymean;
+                    task.sample.period = (task.relativeEndTime - task.endWaitTime-task.startWaitTime)/task.analysis.rotationCount;
+
                     //소장님과 토론할것
 
                     //  [ [q[0],0][0,q[1]] ]  //만들면좋음
 
                     // 루트 1/1202 * 
+               
+                    let fitArr = [];
                     
+                    let diffArr=[];
+
+                    for (let k = 0; k < gazeArr.length; k++) {
+                      
+                            const direction = task.analysis.direction;
+
+                            let fit={                                
+                                relTime: gazeArr[k].relTime,                                
+                            }
+                            if(direction==='clockwise'){
+                                fit.xdegreefit = task.sample.H_radius*Math.sin(2*Math.PI/task.sample.period*(gazeArr[k].relTime-task.startWaitTime))+task.sample.H_offset;
+                                fit.ydegreefit = -task.sample.V_radius*Math.cos(2*Math.PI/task.sample.period*(gazeArr[k].relTime-task.startWaitTime))+task.sample.V_offset;
+                            }
+                            else if(direction==='anticlockwise'){
+                                fit.xdegreefit = -task.sample.H_radius*Math.sin(2*Math.PI/task.sample.period*(gazeArr[k].relTime-task.startWaitTime))+task.sample.H_offset;
+                                fit.ydegreefit = -task.sample.V_radius*Math.cos(2*Math.PI/task.sample.period*(gazeArr[k].relTime-task.startWaitTime))+task.sample.V_offset;
+                            }
+        
+                            fitArr.push(fit);
+                            
+                            if(gazeArr[k].relTime >= task.startWaitTime && gazeArr[k].relTime <= (task.relativeEndTime-task.endWaitTime)){
+
+                                diffArr.push(distance([[gazeArr[k].xdegree,gazeArr[k].ydegree],
+                                    [fit.xdegreefit,fit.ydegreefit]]));
+                            }
+                    }
+                    task.diffArr=diffArr;
+                    task.sample.diff_fit_err = mean(diffArr);
+                    task.fitArr=fitArr;
                 }
 
             }
@@ -625,11 +664,34 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     left_fixation_stability : mean(left_fixation_stability_arr),
                     right_fixation_stability : mean(right_fixation_stability_arr),
                 }
+                // newData.saveData=saveData;
                 console.log("saveData", saveData);
             }
             else if(data.screeningType==='pursuit'){
                 console.log("분석 pursuit")
+
+                let clockwiseArr=[];
+                let anticlockwiseArr=[];
+                for (let i = 0; i < newData.length; i++) {
+                    const task = newData[i];
+    
+                    const direction = task.analysis.direction;
+                    console.log("direction",direction);
+                    if(direction==='clockwise'){
+                        clockwiseArr.push(task.sample.diff_fit_err);
+                    }
+                    else if(direction==='anticlockwise'){
+                        anticlockwiseArr.push(task.sample.diff_fit_err);
+                    }
+
+                }
+               let saveData={
+                clokwise_err: mean(clockwiseArr),
+                anticlokwise_err: mean(anticlockwiseArr),
+               }
                
+            //    newData.saveData=saveData;
+               console.log("saveData", saveData);
             }
             
             
@@ -808,6 +870,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
         const canvas = canvasRef.current;
         const rctx = canvas.getContext('2d');
         rctx.clearRect(0, 0, w, h);
+        const type = task.analysis.type;
 
         // console.log("drawGaze 호출")
         for (let i = 0; i < gazeArr.length; i++) {
@@ -816,8 +879,15 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
                 rctx.beginPath();
                 rctx.lineWidth = 0.5;
-                rctx.strokeStyle = 'rgb(255,0,0,0.3)';
-                rctx.fillStyle = 'rgb(255,0,0,0.3)';
+                if(type==="antisaccade"){
+                    rctx.strokeStyle = 'rgb(0,255,0,0.3)';
+                    rctx.fillStyle = 'rgb(0,255,0,0.3)';
+                }
+                else{
+                    rctx.strokeStyle = 'rgb(255,0,0,0.3)';
+                    rctx.fillStyle = 'rgb(255,0,0,0.3)';
+                }
+
                 // let x = (gazeArr[i].RPOGX) * w;
                 // let y = (gazeArr[i].RPOGY) * h;
                 // console.log("x,y",x,y);
@@ -841,8 +911,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
         // const degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
         // const w = data.screenW;
         // const h = data.screenH;
-        let gazeArr = task.gazeData;
-
+        const gazeArr = task.gazeData;
+        const fitArr = task.fitArr;
 
 
 
@@ -855,18 +925,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             fit_y:[]
         }
         
-        const type=task.analysis.type;
-        let pursuit_attribute={
-        };
 
-        if(type==='pursuit'){
-            pursuit_attribute.a = task.rotation_dataset.mq[0];
-            pursuit_attribute.b = task.rotation_dataset.mq[1];
-            pursuit_attribute.xoffset =  task.rotation_dataset.rdxmean;
-            pursuit_attribute.yoffset =  task.rotation_dataset.rdymean;
-            pursuit_attribute.jugi = (task.relativeEndTime - task.endWaitTime-task.startWaitTime)/task.analysis.rotationCount;
-            pursuit_attribute.direction = task.analysis.direction;
-        }
 
         // console.log("gazeArr",gazeArr);
         for (let i = 0; i < gazeArr.length; i++) {
@@ -889,23 +948,18 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     x: gazeArr[i].relTime * 1000,
                     y: gazeArr[i].ydegree ? gazeArr[i].ydegree : 0
                 }
-                let fit_xdata={};
-                let fit_ydata={};
-                if(type==='pursuit'){
+   
+                if(task.analysis.type==='pursuit'){
                     
-                    fit_xdata.x = gazeArr[i].relTime * 1000;
-                    fit_ydata.x = gazeArr[i].relTime * 1000;
-                    if(pursuit_attribute.direction==='clockwise'){
-                        fit_xdata.y = pursuit_attribute.a*Math.sin(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.xoffset;
-                        fit_ydata.y = -pursuit_attribute.b*Math.cos(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.yoffset;
-                    }
-                    else if(pursuit_attribute.direction==='anticlockwise'){
-                        fit_xdata.y = -pursuit_attribute.a*Math.sin(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.xoffset;
-                        fit_ydata.y = -pursuit_attribute.b*Math.cos(2*Math.PI/pursuit_attribute.jugi*(gazeArr[i].relTime-task.startWaitTime))+pursuit_attribute.yoffset;
-                    }
-
-                    Gdata.fit_x.push(fit_xdata);
-                    Gdata.fit_y.push(fit_ydata);
+                
+                    Gdata.fit_x.push({
+                        x: gazeArr[i].relTime * 1000,
+                        y: fitArr[i].xdegreefit
+                    });
+                    Gdata.fit_y.push({
+                        x: gazeArr[i].relTime * 1000,
+                        y: fitArr[i].ydegreefit
+                    });
                 }
            
 
@@ -1370,7 +1424,56 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                         background: `${taskArr[taskNumber] && taskArr[taskNumber].backgroundColor}`
                     }}>
 
+                        {
+                        taskArr[taskNumber]&&(()=>{
+                                // console.log("asfasf")
+                                const task = taskArr[taskNumber];
+                                // console.log(task);
+                                if(task.analysis.type==='antisaccade'){
+                                    const MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
+                                    const target_size= MONITOR_PX_PER_CM * task.target_size;
+               
 
+                         
+
+                                    let targetLeft1=((task.endCoord.x -target_size/2)+ 'px');
+                                    let targetTop=((task.endCoord.y -target_size/2)+ 'px');
+
+                                    let diff=task.startCoord.x - task.endCoord.x;
+                                    
+                                    let targetLeft2 = task.startCoord.x + diff - target_size/2 + 'px';
+                                    
+
+
+                                    return (<><div className="baseTarget" style={{
+                                        width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+                                        height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+                                        background: `white`,
+                                        left: targetLeft1,
+                                        top: targetTop
+                                    }}/>
+                                    <div className="baseTarget" style={{
+                                        width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+                                        height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+                                        background: `white`,
+                                        left: targetLeft2,
+                                        top: targetTop
+                                    }}/>
+                                                                        <div className="baseTarget" style={{
+                                        width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+                                        height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+                                        background: `white`,
+                                        left: (task.startCoord.x -target_size/2)+ 'px',
+                                        top: (task.startCoord.y -target_size/2)+ 'px'
+                                    }}/>
+                                    </>)
+                                }
+                                else{
+                                    return null;
+                                }
+
+                            })()
+                        }
                         <div className="target"
                             style={{
                                 width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
