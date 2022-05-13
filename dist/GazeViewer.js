@@ -58,21 +58,50 @@ function _extends() { _extends = Object.assign || function (target) { for (var i
 //그나마 찾은 ㄱㅊ은것.. 머신러닝임 마찬가지로
 //https://github.com/mljs/levenberg-marquardt
 //advanced regression 모듈 우리꺼에 추가할것..
+function get_blink_arr(obj) {
+  var rawGaze = obj;
+  var blk_arr = [];
+  var BLKID = 0;
+  var blink = {
+    BLKID: null,
+    BLKS: null,
+    BLKD: null,
+    GRB_start_index: null,
+    GRB_end_index: null
+  };
+  var ingblink = false;
 
-/*
-saccade
- => "analysis": { "type": "saccade", "direction": "top" }
+  for (var i = 0; i < rawGaze.length; i++) {
+    if (rawGaze[i].BLKV) {
+      if (BLKID !== rawGaze[i].BLKID) {
+        //처음 눈을감음
+        ingblink = true;
+        BLKID = rawGaze[i].BLKID;
+        blink.BLKID = BLKID;
+        blink.BLKS = rawGaze[i].relTime;
+        blink.GRB_start_index = i;
+      }
+    } else {
+      if (ingblink === true) {
+        ingblink = false;
+        blink.GRB_end_index = i - 1 + 12;
+        blink.BLKD = rawGaze[i - 1].BLKD + 0.1;
+        blk_arr.push(JSON.parse(JSON.stringify(blink)));
+        blink = {
+          BLKID: null,
+          BLKS: null,
+          BLKD: null,
+          GRB_start_index: null,
+          GRB_end_index: null
+        };
+      }
+    }
+  } //console.log(blk_arr.length);
 
-top | bottom | left | right
 
-pursuit 
- => "analysis": { "type": "pursuit", "direction": "clockwise", "rotationCount": 2 }
- => "analysis": { "type": "pursuit", "direction": "anticlockwise", "rotationCount": 2 }
+  return blk_arr;
+}
 
-antisaccade
- => "analysis": { "type": "antisaccade", "direction": "right" }
-
-*/
 var lineChart;
 
 var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
@@ -205,6 +234,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var type = task.type; //gazeraw에 degree로 변환작업
 
         var gazeArr = task.gazeData;
+        var blink_arr = get_blink_arr(gazeArr);
 
         for (var j = 0; j < gazeArr.length; j++) {
           var target_pixels = {
@@ -288,8 +318,9 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             gazeArr[j].xdegree = null;
             gazeArr[j].ydegree = null;
           }
-        } //분석 하기..
+        }
 
+        task.blinkArr = blink_arr; //분석 하기..
 
         if (task.analysis.type === "saccade") {
           var A_ydegree_arr = [];
@@ -459,10 +490,13 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           for (var _j6 = 0; _j6 < gazeArr.length; _j6++) {
             if (gazeArr[_j6].relTime * 1 >= task.startWaitTime * 1 && gazeArr[_j6].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1) {
               //startWaitTime  ~  relativeEndTime - endWaitTime 
-              rdx.push(gazeArr[_j6].xdegree);
-              rdy.push(gazeArr[_j6].ydegree); //startWaitTime 
+              if (gazeArr[_j6].xdegree !== null && gazeArr[_j6].ydegree !== null) {
+                rdx.push(gazeArr[_j6].xdegree);
+                rdy.push(gazeArr[_j6].ydegree);
+              } //startWaitTime 
               // ax^2 + bxy + cy^2 + dx + ey + f = 0; //식을두고,
               // x^2 , xy , y^2 , x , y , 1
+
 
               homogeneous_linear_dataset.push([gazeArr[_j6].xdegree * gazeArr[_j6].xdegree, //X^2
               gazeArr[_j6].xdegree * gazeArr[_j6].ydegree, //XY
@@ -478,8 +512,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
           for (var _j7 = 0; _j7 < gazeArr.length; _j7++) {
             if (gazeArr[_j7].relTime * 1 >= task.startWaitTime * 1 && gazeArr[_j7].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1) {
-              rotation_dataset.push([gazeArr[_j7].xdegree - rdxmean, gazeArr[_j7].ydegree - rdymean]); //startWaitTime  ~  relativeEndTime - endWaitTime 
+              if (gazeArr[_j7].xdegree !== null && gazeArr[_j7].ydegree !== null) {
+                rotation_dataset.push([gazeArr[_j7].xdegree - rdxmean, gazeArr[_j7].ydegree - rdymean]);
+              } //startWaitTime  ~  relativeEndTime - endWaitTime 
               //startWaitTime 
+
             }
           }
 
@@ -514,6 +551,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
           var fitArr = [];
           var diffArr = [];
+          console.log("task.blinkArr", task.blinkArr);
 
           for (var k = 0; k < gazeArr.length; k++) {
             var direction = task.analysis.direction;
@@ -522,6 +560,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             };
 
             if (direction === 'clockwise') {
+              //  a*sin(2pi/주기*X)+오프셋;
               fit.xdegreefit = task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
               fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
             } else if (direction === 'anticlockwise') {
@@ -532,13 +571,30 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             fitArr.push(fit);
 
             if (gazeArr[k].relTime >= task.startWaitTime && gazeArr[k].relTime <= task.relativeEndTime - task.endWaitTime) {
-              diffArr.push((0, _mathjs.distance)([[gazeArr[k].xdegree, gazeArr[k].ydegree], [fit.xdegreefit, fit.ydegreefit]]));
+              if (gazeArr[k].xdegree !== null && gazeArr[k].ydegree !== null) {
+                var isnot_blink = true;
+
+                for (var p = 0; p < task.blinkArr.length; p++) {
+                  // console.log("task.blinkArr[p]",task.blinkArr[p]);
+                  if (task.blinkArr[p].GRB_start_index <= k && task.blinkArr[p].GRB_end_index >= k) {
+                    // console.log("제외해야함")
+                    isnot_blink = false;
+                    break;
+                  }
+                }
+
+                if (isnot_blink === true) {
+                  diffArr.push((0, _mathjs.distance)([[gazeArr[k].xdegree, gazeArr[k].ydegree], [fit.xdegreefit, fit.ydegreefit]]));
+                } // diffArr.push(distance([[gazeArr[k].xdegree, gazeArr[k].ydegree],
+                //     [fit.xdegreefit, fit.ydegreefit]]));
+
+              }
             }
           }
 
           task.diffArr = diffArr;
           task.sample.diff_fit_err = (0, _mathjs.mean)(diffArr);
-          task.fitArr = fitArr;
+          task.fitArr = fitArr; // console.log("여기볼게")
         }
       } //개별데이터 끝났고 다시 한다고 가정
 
@@ -824,45 +880,142 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       eye_x: [],
       eye_y: [],
       fit_x: [],
-      fit_y: []
-    }; // console.log("gazeArr",gazeArr);
+      fit_y: [],
+      BLK: [{
+        x: 0,
+        y: 0
+      }]
+    }; //////////////////Blink 차트 구하기////////
+
+    var ingblink = false;
+    var BLKID = -1;
+    var bstart_time = null;
+    var bend_time = null; // console.log("blinkArr",blinkArr);
+
+    var alpha_blink_time = 0.1;
 
     for (var i = 0; i < gazeArr.length; i++) {
-      if (gazeArr[i].relTime <= nowTime * 1 && gazeArr[i].RPOGV) {
+      if (gazeArr[i].relTime <= nowTime) {
+        if (gazeArr[i].BLKV) {
+          if (BLKID !== gazeArr[i].BLKID) {
+            //눈을감음
+            ingblink = true;
+            BLKID = gazeArr[i].BLKID;
+            bstart_time = gazeArr[i].relTime;
+          }
+        } else {
+          if (ingblink) {
+            ingblink = false;
+            bend_time = gazeArr[i - 1].relTime;
+            Gdata.BLK.push({
+              x: bstart_time * 1000,
+              y: 0
+            });
+            Gdata.BLK.push({
+              x: bstart_time * 1000,
+              y: 1
+            });
+            Gdata.BLK.push({
+              x: bend_time * 1000 + alpha_blink_time * 1000,
+              y: 1
+            });
+            Gdata.BLK.push({
+              x: bend_time * 1000 + alpha_blink_time * 1000,
+              y: 0
+            });
+            bstart_time = null;
+            bend_time = null;
+          }
+        }
+      } else {
+        if (bstart_time !== null) {
+          var tmpendindex = void 0;
+
+          if (gazeArr[i].BLKV) {
+            //눈을감은상태임..여전히
+            tmpendindex = i; //                      console.log("합당"+i);
+          } else {
+            tmpendindex = i - 1; //                    console.log("오류"+i);
+            //console.log(rawGaze);
+          }
+
+          ingblink = false;
+          bend_time = gazeArr[tmpendindex].relTime;
+          Gdata.BLK.push({
+            x: bstart_time * 1000,
+            y: 0
+          });
+          Gdata.BLK.push({
+            x: bstart_time * 1000,
+            y: 1
+          });
+          Gdata.BLK.push({
+            x: bend_time * 1000,
+            y: 1
+          });
+          Gdata.BLK.push({
+            x: bend_time * 1000,
+            y: 0
+          });
+          bstart_time = null;
+          bend_time = null;
+        }
+
+        break;
+      }
+    } // console.log("Gdata",Gdata)
+    //////////////////Blink 차트 구하기////////
+    // console.log("gazeArr",gazeArr);
+
+
+    for (var _i5 = 0; _i5 < gazeArr.length; _i5++) {
+      if (gazeArr[_i5].relTime <= nowTime * 1) {
         // console.log("gazeArr[i].target_xdegree?",gazeArr[i]);
         // console.log("target_xdegree:",gazeArr[i].target_xdegree)
         var target_xdata = {
-          x: gazeArr[i].relTime * 1000,
-          y: gazeArr[i].target_xdegree ? gazeArr[i].target_xdegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].target_xdegree ? gazeArr[_i5].target_xdegree : 0
         };
         var target_ydata = {
-          x: gazeArr[i].relTime * 1000,
-          y: gazeArr[i].target_ydegree ? gazeArr[i].target_ydegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].target_ydegree ? gazeArr[_i5].target_ydegree : 0
         };
         var eye_xdata = {
-          x: gazeArr[i].relTime * 1000,
-          y: gazeArr[i].xdegree ? gazeArr[i].xdegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].xdegree !== null ? gazeArr[_i5].xdegree : 0
         };
         var eye_ydata = {
-          x: gazeArr[i].relTime * 1000,
-          y: gazeArr[i].ydegree ? gazeArr[i].ydegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].ydegree !== null ? gazeArr[_i5].ydegree : 0
         };
 
-        if (task.analysis.type === 'pursuit') {
-          Gdata.fit_x.push({
-            x: gazeArr[i].relTime * 1000,
-            y: fitArr[i].xdegreefit
-          });
-          Gdata.fit_y.push({
-            x: gazeArr[i].relTime * 1000,
-            y: fitArr[i].ydegreefit
-          });
+        if (task.analysis.type === 'pursuit' && fitArr && fitArr[_i5]) {
+          if (fitArr[_i5].xdegreefit !== null) {
+            Gdata.fit_x.push({
+              x: gazeArr[_i5].relTime * 1000,
+              y: fitArr[_i5].xdegreefit !== null ? fitArr[_i5].xdegreefit : 0
+            });
+          }
+
+          if (fitArr[_i5].ydegreefit !== null) {
+            Gdata.fit_y.push({
+              x: gazeArr[_i5].relTime * 1000,
+              y: fitArr[_i5].ydegreefit !== null ? fitArr[_i5].ydegreefit : 0
+            });
+          }
         }
 
         Gdata.target_x.push(target_xdata);
         Gdata.target_y.push(target_ydata);
-        Gdata.eye_x.push(eye_xdata);
-        Gdata.eye_y.push(eye_ydata); // if(fit_x)Gdata.fit_x.push(fit_x);
+
+        if (gazeArr[_i5].xdegree !== null) {
+          Gdata.eye_x.push(eye_xdata);
+        }
+
+        if (gazeArr[_i5].ydegree !== null) {
+          Gdata.eye_y.push(eye_ydata);
+        } // if(fit_x)Gdata.fit_x.push(fit_x);
+
       }
     }
 
@@ -873,7 +1026,8 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       lineChart.chartInstance.data.datasets[2].data = Gdata.target_y;
       lineChart.chartInstance.data.datasets[3].data = Gdata.eye_y;
       lineChart.chartInstance.data.datasets[4].data = Gdata.fit_x;
-      lineChart.chartInstance.data.datasets[5].data = Gdata.fit_y; // if(equation){
+      lineChart.chartInstance.data.datasets[5].data = Gdata.fit_y;
+      lineChart.chartInstance.data.datasets[6].data = Gdata.BLK; // if(equation){
       //     lineChart.chartInstance.data.datasets[4].data = Gdata.estimate;  
       // }
 
@@ -1197,7 +1351,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       pointHoverRadius: 2 //hover 데이터포인터크기
 
     }, {
-      //estimate
+      //fitx
       data: [],
       steppedLine: "before",
       label: "fit H",
@@ -1213,7 +1367,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       pointHoverRadius: 2 //hover 데이터포인터크기
 
     }, {
-      //estimate
+      //fity
       data: [],
       steppedLine: "before",
       label: "fit V",
@@ -1228,29 +1382,33 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       //데이터 포인터크기
       pointHoverRadius: 2 //hover 데이터포인터크기
 
-    } // {  // 깜빡임 Blink
-    //     data: [
-    //         /*
-    //         {x:0,y:0},
-    //         {x:50,y:0},
-    //         {x:50,y:1},
-    //         {x:50,y:0},
-    //         {x:70,y:0},
-    //         {x:70,y:1},
-    //         {x:80,y:1}
-    //         */
-    //     ],
-    //     steppedLine: "before",
-    //     borderWidth: 0,
-    //     label: "Blink",
-    //     borderColor: "rgba(0,255,0,0.2)",//""#ff0000",
-    //     backgroundColor: 'rgba(0,255,0,0.2)',
-    //     fill: true,
-    //     xAxisID: "timeid",
-    //     yAxisID: "ax_blink",
-    //     pointRadius: 0, //데이터 포인터크기
-    //     pointHoverRadius: 0, //hover 데이터포인터크기
-    // }
+    }, {
+      //BLINK
+      data: [
+        /*
+        {x:0,y:0},
+        {x:50,y:0},
+        {x:50,y:1},
+        {x:50,y:0},
+        {x:70,y:0},
+        {x:70,y:1},
+        {x:80,y:1}
+        */
+      ],
+      steppedLine: "before",
+      borderWidth: 0,
+      label: "Blink",
+      borderColor: "rgba(0,255,0,0.2)",
+      //""#ff0000",
+      backgroundColor: 'rgba(0,255,0,0.2)',
+      fill: true,
+      xAxisID: "timeid",
+      yAxisID: "ax_blink",
+      pointRadius: 0,
+      //데이터 포인터크기
+      pointHoverRadius: 0 //hover 데이터포인터크기
+
+    } //BLINK
     ]
   }),
       _React$useState26 = _slicedToArray(_React$useState25, 1),
@@ -1367,6 +1525,55 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     // console.log("asfasf")
     var task = taskArr[taskNumber]; // console.log(task);
 
+    if (task.analysis.type === 'pursuit') {
+      var direction = task.analysis.direction;
+      var fit = {};
+
+      if (nowTime <= task.startWaitTime) {
+        //작은경우
+        //맨꼭대기에 있어야함..
+        fit.xdegreefit = task.sample.H_radius * Math.sin(0) + task.sample.H_offset;
+        fit.ydegreefit = -task.sample.V_radius * Math.cos(0) + task.sample.V_offset;
+      } else if (nowTime >= task.startWaitTime && nowTime <= task.relativeEndTime - task.endWaitTime) {
+        //#@!
+        //뭘 잘못했나?
+        if (direction === 'clockwise') {
+          //  a*sin(2pi/주기*X)+오프셋;
+          fit.xdegreefit = task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (nowTime - task.startWaitTime)) + task.sample.H_offset;
+          fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (nowTime - task.startWaitTime)) + task.sample.V_offset;
+        } else if (direction === 'anticlockwise') {
+          fit.xdegreefit = -task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (nowTime - task.startWaitTime)) + task.sample.H_offset;
+          fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (nowTime - task.startWaitTime)) + task.sample.V_offset;
+        }
+      } else {
+        fit.xdegreefit = task.sample.H_radius * Math.sin(0) + task.sample.H_offset;
+        fit.ydegreefit = -task.sample.V_radius * Math.cos(0) + task.sample.V_offset;
+      }
+
+      fit.xcmfit = Math.tan(fit.xdegreefit * Math.PI / 180) * data.defaultZ;
+      fit.ycmfit = Math.tan(fit.ydegreefit * Math.PI / 180) * data.defaultZ;
+      fit.xpxfit = fit.xcmfit * data.monitorInform.MONITOR_PX_PER_CM;
+      fit.ypxfit = fit.ycmfit * data.monitorInform.MONITOR_PX_PER_CM;
+      var targetL, targetT;
+      targetL = task.centerCoord.x + fit.xpxfit - data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size / 2;
+      targetT = task.centerCoord.y + fit.ypxfit - data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size / 2;
+      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+        className: "target",
+        style: {
+          width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          height: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
+          background: "yellow",
+          left: targetL,
+          top: targetT
+        }
+      }));
+    } else {
+      return null;
+    }
+  }(), taskArr[taskNumber] && function () {
+    // console.log("asfasf")
+    var task = taskArr[taskNumber]; // console.log(task);
+
     if (task.type === 'circular') {
       return /*#__PURE__*/_react.default.createElement("div", {
         className: "originCircle",
@@ -1390,15 +1597,17 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     var xoffset_cm = Math.tan(xoffset_degree * Math.PI / 180) * data.defaultZ;
     var yoffset_cm = Math.tan(yoffset_degree * Math.PI / 180) * data.defaultZ;
     var xoffset_px = xoffset_cm * data.monitorInform.MONITOR_PX_PER_CM;
-    var yoffset_px = yoffset_cm * data.monitorInform.MONITOR_PX_PER_CM;
+    var yoffset_px = yoffset_cm * data.monitorInform.MONITOR_PX_PER_CM; //#@! 뭘 잘못했나?
+
     var width_degree = task.rotation_dataset.mq[0] || null;
     var height_degree = task.rotation_dataset.mq[1] || null; // console.log("width_degree",width_degree);
 
     var width_cm = Math.tan(width_degree * Math.PI / 180) * data.defaultZ;
     var height_cm = Math.tan(height_degree * Math.PI / 180) * data.defaultZ; // console.log("width_cm",width_cm);
 
-    var width_px = width_cm * data.monitorInform.MONITOR_PX_PER_CM;
-    var height_px = height_cm * data.monitorInform.MONITOR_PX_PER_CM;
+    var width_px = width_cm * data.monitorInform.MONITOR_PX_PER_CM; //가로 반지름
+
+    var height_px = height_cm * data.monitorInform.MONITOR_PX_PER_CM; //세로 반지름
 
     if (task.type === 'circular') {
       return /*#__PURE__*/_react.default.createElement("div", {
