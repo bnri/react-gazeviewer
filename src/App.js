@@ -6,13 +6,13 @@ import GazeViewer from './lib/GazeViewer';
 import saccade from './datasample/saccade.json';
 import pursuit from './datasample/pursuit.json';
 import antisaccade from './datasample/antisaccade.json';
-
+import _33 from './datasample/33.json';
 function App() {
   const [dataNumber,set_dataNumber] = React.useState(0);
 
   
   const dataArr = React.useMemo(()=>{
-    let da =[saccade,pursuit,antisaccade];
+    let da =[saccade,pursuit,antisaccade,_33];
     for(let i = 0 ; i<da.length; i++){
       let newraw= da[i];
       if(newraw){
@@ -63,6 +63,7 @@ function App() {
             <option value={0}>saccade</option>
             <option value={1}>pursuit</option>
             <option value={2}>antisaccade</option>
+            <option value={3}>33</option>
           </select>
       </div>
 
