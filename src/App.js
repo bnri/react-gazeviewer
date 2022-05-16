@@ -66,6 +66,7 @@ function App() {
           </select>
       </div>
 
+
        <div style={{width:'calc(100% - 40px)',height:'calc(100% - 80px)',border:'1px solid #7367f0',boxSizing:'border-box' , margin:'20px'}}>
            <GazeViewer data={dataArr[dataNumber]} />
        </div>
