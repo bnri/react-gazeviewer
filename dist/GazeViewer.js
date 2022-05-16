@@ -244,7 +244,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             y: null
           };
 
-          if (type === 'teleport') {
+          if (type === "teleport") {
             //2~5 고정임
             if (gazeArr[j].relTime * 1 < task.startWaitTime * 1) {
               target_pixels.x = task.startCoord.x - w / 2;
@@ -268,7 +268,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             var target_ydegree = target_ycm * degree_per_cm;
             gazeArr[j].target_xdegree = target_xdegree;
             gazeArr[j].target_ydegree = target_ydegree;
-          } else if (type === 'circular') {
+          } else if (type === "circular") {
             var radian = Math.PI / 180;
             var radius = task.radius;
 
@@ -450,15 +450,16 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
               //gazeArr[j].xdegree , gazeArr[j].ydegree
               //와 거리가
               // 0.5 이상인친구가
-              //A_mean_xdegree ,A_mean_ydegree 
-              if (gazeArr[_j3].xdegree === null || gazeArr[_j3].ydegree === null || gazeArr[_j3 + 1].xdegree === null || gazeArr[_j3 + 1].ydegree === null || gazeArr[_j3 + 2].xdegree === null || gazeArr[_j3 + 2].ydegree === null || task.A_mean_xdegree !== null || task.A_mean_ydegree !== null) {
-                break;
+              //A_mean_xdegree ,A_mean_ydegree
+              if (gazeArr[_j3].xdegree === null || gazeArr[_j3].ydegree === null || gazeArr[_j3 + 1].xdegree === null || gazeArr[_j3 + 1].ydegree === null || gazeArr[_j3 + 2].xdegree === null || gazeArr[_j3 + 2].ydegree === null || task.A_mean_xdegree === null || task.A_mean_ydegree === null) {
+                continue;
               }
 
               if ((0, _mathjs.distance)([gazeArr[_j3].xdegree, gazeArr[_j3].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold && (0, _mathjs.distance)([gazeArr[_j3 + 1].xdegree, gazeArr[_j3 + 1].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold && (0, _mathjs.distance)([gazeArr[_j3 + 2].xdegree, gazeArr[_j3 + 2].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold) {
                 task.sample.startTime = gazeArr[_j3].relTime * 1;
                 task.sample.saccade_delay = gazeArr[_j3].relTime * 1 - task.startWaitTime * 1;
-                isfoundStartTime = true;
+                isfoundStartTime = true; // console.log(i+"번쨰"+"saccade_delay 찾음");
+
                 break;
               }
             }
@@ -466,7 +467,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
           if (isfoundStartTime === false) {
             task.sample.startTime = null;
-            task.sample.saccade_delay = null;
+            task.sample.saccade_delay = null; // console.log(i+"번쨰"+"saccade_delay 못찾음");
           }
 
           var isFoundEndTime = false;
@@ -474,11 +475,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           for (var _j4 = 0; _j4 < gazeArr.length; _j4++) {
             if (_j4 < gazeArr.length - 3 && task.sample.startTime !== null && gazeArr[_j4].relTime * 1 >= task.sample.startTime * 1) {
               if (gazeArr[_j4].xdegree === null || gazeArr[_j4].ydegree === null || gazeArr[_j4 + 1].xdegree === null || gazeArr[_j4 + 1].ydegree === null || gazeArr[_j4 + 2].xdegree === null || gazeArr[_j4 + 2].ydegree === null || task.B_mean_xdegree === null || task.B_mean_ydegree === null) {
-                break;
+                continue;
               } //gazeArr[j].xdegree , gazeArr[j].ydegree
               //와 거리가
               // 0.5 이상인친구가
-              //A_mean_xdegree ,A_mean_ydegree 
+              //A_mean_xdegree ,A_mean_ydegree
 
 
               if ((0, _mathjs.distance)([gazeArr[_j4].xdegree, gazeArr[_j4].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <= task.sample.fixation_threshold && (0, _mathjs.distance)([gazeArr[_j4 + 1].xdegree, gazeArr[_j4 + 1].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <= task.sample.fixation_threshold && (0, _mathjs.distance)([gazeArr[_j4 + 2].xdegree, gazeArr[_j4 + 2].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <= task.sample.fixation_threshold) {
@@ -503,7 +504,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           for (var _j5 = 0; _j5 < gazeArr.length; _j5++) {
             if (gazeArr[_j5].relTime * 1 >= task.startWaitTime * 1 + task.duration * 1 - 2 && gazeArr[_j5].relTime * 1 <= task.startWaitTime * 1 + task.duration * 1) {
               if (gazeArr[_j5].xdegree === null || gazeArr[_j5].ydegree === null || task.B_mean_xdegree === null || task.B_mean_ydegree === null) {
-                break;
+                continue;
               }
 
               if (gazeArr[_j5].xdegree !== null && gazeArr[_j5].ydegree !== null) {
@@ -515,7 +516,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           }
 
           task.sample.fixation_stability = B_xydiff_arr.length && (0, _mathjs.std)(B_xydiff_arr) || null;
-        } else if (task.analysis.type === 'pursuit') {
+        } else if (task.analysis.type === "pursuit") {
           var rotation_dataset = [];
           var rdx = [];
           var rdy = [];
@@ -523,11 +524,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
           for (var _j6 = 0; _j6 < gazeArr.length; _j6++) {
             if (gazeArr[_j6].relTime * 1 >= task.startWaitTime * 1 && gazeArr[_j6].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1) {
-              //startWaitTime  ~  relativeEndTime - endWaitTime 
+              //startWaitTime  ~  relativeEndTime - endWaitTime
               if (gazeArr[_j6].xdegree !== null && gazeArr[_j6].ydegree !== null) {
                 rdx.push(gazeArr[_j6].xdegree);
                 rdy.push(gazeArr[_j6].ydegree);
-              } //startWaitTime 
+              } //startWaitTime
               // ax^2 + bxy + cy^2 + dx + ey + f = 0; //식을두고,
               // x^2 , xy , y^2 , x , y , 1
 
@@ -548,8 +549,8 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             if (gazeArr[_j7].relTime * 1 >= task.startWaitTime * 1 && gazeArr[_j7].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1) {
               if (gazeArr[_j7].xdegree !== null && gazeArr[_j7].ydegree !== null && rdxmean !== null && rdymean !== null) {
                 rotation_dataset.push([gazeArr[_j7].xdegree - rdxmean, gazeArr[_j7].ydegree - rdymean]);
-              } //startWaitTime  ~  relativeEndTime - endWaitTime 
-              //startWaitTime 
+              } //startWaitTime  ~  relativeEndTime - endWaitTime
+              //startWaitTime
 
             }
           }
@@ -599,7 +600,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           task.sample.V_offset = rdymean;
           task.sample.period = (task.relativeEndTime - task.endWaitTime - task.startWaitTime) / task.analysis.rotationCount; //소장님과 토론할것
           //  [ [q[0],0][0,q[1]] ]  //만들면좋음
-          // 루트 1/1202 * 
+          // 루트 1/1202 *
 
           var fitArr = [];
           var diffArr = [];
@@ -611,11 +612,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
               relTime: gazeArr[k].relTime
             };
 
-            if (direction === 'clockwise') {
+            if (direction === "clockwise") {
               //  a*sin(2pi/주기*X)+오프셋;
               fit.xdegreefit = task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
               fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
-            } else if (direction === 'anticlockwise') {
+            } else if (direction === "anticlockwise") {
               fit.xdegreefit = -task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
               fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
             }
@@ -655,7 +656,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       console.log("taskArr 작업끝");
       var saveData;
 
-      if (data.screeningType === 'saccade') {
+      if (data.screeningType === "saccade") {
         var up_saccade_delay_arr = [];
         var down_saccade_delay_arr = [];
         var left_saccade_delay_arr = [];
@@ -673,7 +674,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           var _task = _taskArr[_i3];
           var _direction = _task.analysis.direction;
 
-          if (_direction === 'top') {
+          if (_direction === "top") {
             if (_task.sample.saccade_delay !== null) {
               up_saccade_delay_arr.push(_task.sample.saccade_delay);
             }
@@ -685,7 +686,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             if (_task.sample.fixation_stability !== null) {
               up_fixation_stability_arr.push(_task.sample.fixation_stability);
             }
-          } else if (_direction === 'bottom') {
+          } else if (_direction === "bottom") {
             if (_task.sample.saccade_delay !== null) {
               down_saccade_delay_arr.push(_task.sample.saccade_delay);
             }
@@ -697,7 +698,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             if (_task.sample.fixation_stability !== null) {
               down_fixation_stability_arr.push(_task.sample.fixation_stability);
             }
-          } else if (_direction === 'left') {
+          } else if (_direction === "left") {
             if (_task.sample.saccade_delay !== null) {
               left_saccade_delay_arr.push(_task.sample.saccade_delay);
             }
@@ -709,7 +710,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             if (_task.sample.fixation_stability !== null) {
               left_fixation_stability_arr.push(_task.sample.fixation_stability);
             }
-          } else if (_direction === 'right') {
+          } else if (_direction === "right") {
             if (_task.sample.saccade_delay !== null) {
               right_saccade_delay_arr.push(_task.sample.saccade_delay);
             }
@@ -740,7 +741,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         }; // taskArr.saveData=saveData;
 
         console.log("saveData", saveData);
-      } else if (data.screeningType === 'pursuit') {
+      } else if (data.screeningType === "pursuit") {
         console.log("분석 pursuit");
         var clockwiseArr = [];
         var anticlockwiseArr = [];
@@ -750,11 +751,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           var _direction2 = _task2.analysis.direction;
           console.log("direction", _direction2);
 
-          if (_direction2 === 'clockwise') {
+          if (_direction2 === "clockwise") {
             if (_task2.sample.diff_fit_err !== null) {
               clockwiseArr.push(_task2.sample.diff_fit_err);
             }
-          } else if (_direction2 === 'anticlockwise') {
+          } else if (_direction2 === "anticlockwise") {
             if (_task2.sample.diff_fit_err !== null) {
               anticlockwiseArr.push(_task2.sample.diff_fit_err);
             }
@@ -765,6 +766,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           clockwise_err: clockwiseArr.length && (0, _mathjs.mean)(clockwiseArr) || null,
           anticlockwise_err: anticlockwiseArr.length && (0, _mathjs.mean)(anticlockwiseArr) || null
         };
+      } else if (data.screeningType === "antisaccade") {
+        saveData = _objectSpread(_objectSpread({}, s3data.analysis), {}, {
+          right_antisaccade_delay: 10
+        });
       }
 
       console.log("savedata 객체작업끝");

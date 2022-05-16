@@ -204,667 +204,644 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             //taskArr 의 trial 수만큼 반복
             for (let i = 0; i < data.screeningObjectList.length; i++) {
                 let obj = {
-                    ...data.screeningObjectList[i],
-                    gazeData: data.taskArr[i]
+                  ...data.screeningObjectList[i],
+                  gazeData: data.taskArr[i],
                 };
                 taskArr.push(obj);
-            }
-            console.log("데이터 형변환끝")
-
-            console.log("taskArr 작업");
-            for (let i = 0; i < taskArr.length; i++) {
+              }
+              console.log("데이터 형변환끝");
+          
+              console.log("taskArr 작업");
+              for (let i = 0; i < taskArr.length; i++) {
                 const task = taskArr[i];
-
+          
                 const type = task.type;
                 let gazeArr = task.gazeData;
-
-
+          
                 let blink_arr = get_blink_arr(gazeArr);
                 task.blinkArr = blink_arr;
-
+          
                 for (let j = 0; j < gazeArr.length; j++) {
-                    let target_pixels = {
-                        x: null,
-                        y: null,
+                  let target_pixels = {
+                    x: null,
+                    y: null,
+                  };
+                  if (type === "teleport") {
+                    //2~5 고정임
+          
+                    if (gazeArr[j].relTime * 1 < task.startWaitTime * 1) {
+                      target_pixels.x = task.startCoord.x - w / 2;
+                      target_pixels.y = task.startCoord.y - h / 2;
+                    } else if (gazeArr[j].relTime * 1 < task.duration * 1 + task.startWaitTime * 1) {
+                      target_pixels.x = task.endCoord.x - w / 2;
+                      target_pixels.y = task.endCoord.y - h / 2;
+                    } else {
+                      if (task.isReturn) {
+                        target_pixels.x = task.startCoord.x - w / 2;
+                        target_pixels.y = task.startCoord.y - h / 2;
+                      } else {
+                        target_pixels.x = task.endCoord.x - w / 2;
+                        target_pixels.y = task.endCoord.y - h / 2;
+                      }
                     }
-                    if (type === 'teleport') {
-                        //2~5 고정임
-
-                        if (gazeArr[j].relTime * 1 < task.startWaitTime * 1) {
-                            target_pixels.x = task.startCoord.x - w / 2;
-                            target_pixels.y = task.startCoord.y - h / 2;
-
-                        }
-                        else if (gazeArr[j].relTime * 1 < (task.duration * 1 + task.startWaitTime * 1)) {
-                            target_pixels.x = task.endCoord.x - w / 2;
-                            target_pixels.y = task.endCoord.y - h / 2;
-                        }
-                        else {
-                            if (task.isReturn) {
-                                target_pixels.x = task.startCoord.x - w / 2;
-                                target_pixels.y = task.startCoord.y - h / 2;
-                            }
-                            else {
-                                target_pixels.x = task.endCoord.x - w / 2;
-                                target_pixels.y = task.endCoord.y - h / 2;
-                            }
-
-                        }
-                        let target_xcm = target_pixels.x / pixel_per_cm;
-                        let target_ycm = target_pixels.y / pixel_per_cm;
-                        let target_xdegree = target_xcm * degree_per_cm;
-                        let target_ydegree = target_ycm * degree_per_cm;
-                        gazeArr[j].target_xdegree = target_xdegree;
-                        gazeArr[j].target_ydegree = target_ydegree;
-
+                    let target_xcm = target_pixels.x / pixel_per_cm;
+                    let target_ycm = target_pixels.y / pixel_per_cm;
+                    let target_xdegree = target_xcm * degree_per_cm;
+                    let target_ydegree = target_ycm * degree_per_cm;
+                    gazeArr[j].target_xdegree = target_xdegree;
+                    gazeArr[j].target_ydegree = target_ydegree;
+                  } else if (type === "circular") {
+                    const radian = Math.PI / 180;
+                    const radius = task.radius;
+          
+                    if (gazeArr[j].relTime * 1 < task.startWaitTime) {
+                      const cosTheta = Math.cos(task.startDegree * radian);
+                      const sineTheta = Math.sin(task.startDegree * radian);
+                      target_pixels.x = task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - w / 2;
+                      target_pixels.y = task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - h / 2;
+                    } else if (gazeArr[j].relTime * 1 < task.duration * 1 + task.startWaitTime * 1) {
+                      let nowDegree = -(
+                        ((task.startDegree - task.endDegree) * (gazeArr[j].relTime - task.startWaitTime)) / task.duration -
+                        task.startDegree
+                      );
+                      const cosTheta = Math.cos(nowDegree * radian);
+                      const sineTheta = Math.sin(nowDegree * radian);
+                      target_pixels.x = task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - w / 2;
+                      target_pixels.y = task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - h / 2;
+                    } else {
+                      const cosTheta = Math.cos(task.endDegree * radian);
+                      const sineTheta = Math.sin(task.endDegree * radian);
+                      target_pixels.x = task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - w / 2;
+                      target_pixels.y = task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - h / 2;
                     }
-                    else if (type === 'circular') {
-
-                        const radian = Math.PI / 180;
-                        const radius = task.radius;
-
-                        if (gazeArr[j].relTime * 1 < task.startWaitTime) {
-                            const cosTheta = Math.cos(task.startDegree * radian);
-                            const sineTheta = Math.sin(task.startDegree * radian);
-                            target_pixels.x = task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - w / 2;
-                            target_pixels.y = task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - h / 2;
-
-                        }
-                        else if (gazeArr[j].relTime * 1 < (task.duration * 1 + task.startWaitTime * 1)) {
-                            let nowDegree = -((task.startDegree - task.endDegree) *
-                                (gazeArr[j].relTime - task.startWaitTime) / task.duration - task.startDegree);
-                            const cosTheta = Math.cos(nowDegree * radian);
-                            const sineTheta = Math.sin(nowDegree * radian);
-                            target_pixels.x = task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - w / 2;
-                            target_pixels.y = task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - h / 2;
-                        }
-                        else {
-                            const cosTheta = Math.cos(task.endDegree * radian);
-                            const sineTheta = Math.sin(task.endDegree * radian);
-                            target_pixels.x = task.centerCoord.x + radius * cosTheta * MONITOR_PX_PER_CM - w / 2;
-                            target_pixels.y = task.centerCoord.y - radius * sineTheta * MONITOR_PX_PER_CM - h / 2;
-
-                        }
-                        let target_xcm = target_pixels.x / pixel_per_cm;
-                        let target_ycm = target_pixels.y / pixel_per_cm;
-                        let target_xdegree = target_xcm * degree_per_cm;
-                        let target_ydegree = target_ycm * degree_per_cm;
-                        gazeArr[j].target_xdegree = target_xdegree;
-                        gazeArr[j].target_ydegree = target_ydegree;
-                    }
-
-
-                    if (gazeArr[j].RPOGV) {
-                        let xpixel = (gazeArr[j].RPOGX - 0.5) * w
-                        let ypixel = (gazeArr[j].RPOGY - 0.5) * h
-
-                        let xcm = xpixel / pixel_per_cm;
-                        let ycm = ypixel / pixel_per_cm;
-                        let xdegree = xcm * degree_per_cm;
-                        let ydegree = ycm * degree_per_cm;
-
-                        gazeArr[j].xdegree = xdegree;
-                        gazeArr[j].ydegree = ydegree;
-
-                    }
-                    else {
-
-                        gazeArr[j].xdegree = null;
-                        gazeArr[j].ydegree = null;
-
-                    }
-
-
-
+                    let target_xcm = target_pixels.x / pixel_per_cm;
+                    let target_ycm = target_pixels.y / pixel_per_cm;
+                    let target_xdegree = target_xcm * degree_per_cm;
+                    let target_ydegree = target_ycm * degree_per_cm;
+                    gazeArr[j].target_xdegree = target_xdegree;
+                    gazeArr[j].target_ydegree = target_ydegree;
+                  }
+          
+                  if (gazeArr[j].RPOGV) {
+                    let xpixel = (gazeArr[j].RPOGX - 0.5) * w;
+                    let ypixel = (gazeArr[j].RPOGY - 0.5) * h;
+          
+                    let xcm = xpixel / pixel_per_cm;
+                    let ycm = ypixel / pixel_per_cm;
+                    let xdegree = xcm * degree_per_cm;
+                    let ydegree = ycm * degree_per_cm;
+          
+                    gazeArr[j].xdegree = xdegree;
+                    gazeArr[j].ydegree = ydegree;
+                  } else {
+                    gazeArr[j].xdegree = null;
+                    gazeArr[j].ydegree = null;
+                  }
                 }
-
+          
                 if (task.analysis.type === "saccade") {
-
-
-                    let A_ydegree_arr = [];
-                    let A_xdegree_arr = [];
-                    let B_ydegree_arr = [];
-                    let B_xdegree_arr = [];
-
-
-                    task.stabletime = {
-                        A_s: null,
-                        A_e: null,
-                        B_s: null,
-                        B_e: null,
+                  let A_ydegree_arr = [];
+                  let A_xdegree_arr = [];
+                  let B_ydegree_arr = [];
+                  let B_xdegree_arr = [];
+          
+                  task.stabletime = {
+                    A_s: null,
+                    A_e: null,
+                    B_s: null,
+                    B_e: null,
+                  };
+          
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1
+                    ) {
+                      if (task.stabletime.A_s === null) {
+                        task.stabletime.A_s = gazeArr[j].relTime;
+                      }
+                      task.stabletime.A_e = gazeArr[j].relTime;
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        A_xdegree_arr.push(gazeArr[j].xdegree);
+                        A_ydegree_arr.push(gazeArr[j].ydegree);
+                      }
+                    } else if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 + task.duration * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1 + task.duration * 1
+                    ) {
+                      if (task.stabletime.B_s === null) {
+                        task.stabletime.B_s = gazeArr[j].relTime;
+                      }
+                      task.stabletime.B_e = gazeArr[j].relTime;
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        B_xdegree_arr.push(gazeArr[j].xdegree);
+                        B_ydegree_arr.push(gazeArr[j].ydegree);
+                      }
                     }
-
-
-                    for (let j = 0; j < gazeArr.length; j++) {
-
-                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1 - 2) &&
-                            gazeArr[j].relTime * 1 <= task.startWaitTime * 1) {
-                            if (task.stabletime.A_s === null) {
-                                task.stabletime.A_s = gazeArr[j].relTime;
-                            }
-                            task.stabletime.A_e = gazeArr[j].relTime;
-
-
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
-                                A_xdegree_arr.push(gazeArr[j].xdegree);
-                                A_ydegree_arr.push(gazeArr[j].ydegree);
-                            }
-
+                  }
+          
+                  let temp = {};
+          
+                  temp.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) || null;
+                  temp.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) || null;
+                  temp.A_std_ydegree = (A_ydegree_arr.length && std(A_ydegree_arr)) || null;
+                  temp.A_std_xdegree = (A_xdegree_arr.length && std(A_xdegree_arr)) || null;
+          
+                  temp.B_mean_ydegree = (B_ydegree_arr.length && mean(B_ydegree_arr)) || null;
+                  temp.B_mean_xdegree = (B_xdegree_arr.length && mean(B_xdegree_arr)) || null;
+                  temp.B_std_ydegree = (B_ydegree_arr.length && std(B_ydegree_arr)) || null;
+                  temp.B_std_xdegree = (B_xdegree_arr.length && std(B_xdegree_arr)) || null;
+                  A_ydegree_arr = [];
+                  A_xdegree_arr = [];
+                  B_ydegree_arr = [];
+                  B_xdegree_arr = [];
+                  //2표준편차밖을 제외하고 다시 구함
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1
+                    ) {
+                      if (task.stabletime.A_s === null) {
+                        task.stabletime.A_s = gazeArr[j].relTime;
+                      }
+                      task.stabletime.A_e = gazeArr[j].relTime;
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        if (distance([0, temp.A_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.A_std_xdegree) {
+                          A_xdegree_arr.push(gazeArr[j].xdegree);
                         }
-                        else if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1 + task.duration * 1 - 2)
-                            && gazeArr[j].relTime * 1 <= (task.startWaitTime * 1 + task.duration * 1)) {
-                            if (task.stabletime.B_s === null) {
-                                task.stabletime.B_s = gazeArr[j].relTime;
-                            }
-                            task.stabletime.B_e = gazeArr[j].relTime;
-
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
-                                B_xdegree_arr.push(gazeArr[j].xdegree);
-                                B_ydegree_arr.push(gazeArr[j].ydegree);
-                            }
-
-
+                        if (distance([0, temp.A_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.A_std_ydegree) {
+                          A_ydegree_arr.push(gazeArr[j].ydegree);
                         }
-
-
-
+                      }
+                    } else if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 + task.duration * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1 + task.duration * 1
+                    ) {
+                      if (task.stabletime.B_s === null) {
+                        task.stabletime.B_s = gazeArr[j].relTime;
+                      }
+                      task.stabletime.B_e = gazeArr[j].relTime;
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        if (distance([0, temp.B_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.B_std_xdegree) {
+                          B_xdegree_arr.push(gazeArr[j].xdegree);
+                        }
+                        if (distance([0, temp.B_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.B_std_ydegree) {
+                          B_ydegree_arr.push(gazeArr[j].ydegree);
+                        }
+                      }
                     }
-
-                    let temp = {
-
+                  }
+                  task.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) || null;
+                  task.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) || null;
+                  task.A_std_ydegree = (A_ydegree_arr.length && std(A_ydegree_arr)) || null;
+                  task.A_std_xdegree = (A_xdegree_arr.length && std(A_xdegree_arr)) || null;
+          
+                  task.B_mean_ydegree = (B_ydegree_arr.length && mean(B_ydegree_arr)) || null;
+                  task.B_mean_xdegree = (B_xdegree_arr.length && mean(B_xdegree_arr)) || null;
+                  task.B_std_ydegree = (B_ydegree_arr.length && std(B_ydegree_arr)) || null;
+                  task.B_std_xdegree = (B_xdegree_arr.length && std(B_xdegree_arr)) || null;
+          
+                  let saccade_distance;
+                  if (
+                    task.A_mean_xdegree !== null &&
+                    task.A_mean_ydegree !== null &&
+                    task.B_mean_xdegree !== null &&
+                    task.B_mean_ydegree !== null
+                  ) {
+                    saccade_distance = distance(
+                      [task.A_mean_xdegree, task.A_mean_ydegree],
+                      [task.B_mean_xdegree, task.B_mean_ydegree]
+                    );
+                  }
+          
+                  task.sample = {
+                    start_position: {
+                      x: task.A_mean_xdegree,
+                      y: task.A_mean_ydegree,
+                    },
+                    end_position: {
+                      x: task.B_mean_xdegree,
+                      y: task.B_mean_ydegree,
+                    },
+                    saccade_distance: saccade_distance,
+                    fixation_threshold: 1,
+                    startTime: null,
+                    endTime: null,
+                    saccade_delay: null,
+                    saccade_duration: null,
+                    saccade_speed: null, //degree / sec
+                    fixation_stability: null,
+                  };
+          
+                  let isfoundStartTime = false;
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (j < gazeArr.length - 3 && gazeArr[j].relTime * 1 >= task.startWaitTime * 1) {
+                      //gazeArr[j].xdegree , gazeArr[j].ydegree
+                      //와 거리가
+                      // 0.5 이상인친구가
+                      //A_mean_xdegree ,A_mean_ydegree
+                      if (
+                        gazeArr[j].xdegree === null ||
+                        gazeArr[j].ydegree === null ||
+                        gazeArr[j + 1].xdegree === null ||
+                        gazeArr[j + 1].ydegree === null ||
+                        gazeArr[j + 2].xdegree === null ||
+                        gazeArr[j + 2].ydegree === null ||
+                        task.A_mean_xdegree === null ||
+                        task.A_mean_ydegree === null
+                      ) {              
+                        continue;
+          
+                      }
+          
+                      if (
+                        distance([gazeArr[j].xdegree, gazeArr[j].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >=
+                          task.sample.fixation_threshold &&
+                        distance([gazeArr[j + 1].xdegree, gazeArr[j + 1].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >=
+                          task.sample.fixation_threshold &&
+                        distance([gazeArr[j + 2].xdegree, gazeArr[j + 2].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >=
+                          task.sample.fixation_threshold
+                      ) {
+                        task.sample.startTime = gazeArr[j].relTime * 1;
+                        task.sample.saccade_delay = gazeArr[j].relTime * 1 - task.startWaitTime * 1;
+                        isfoundStartTime = true;
+                        // console.log(i+"번쨰"+"saccade_delay 찾음");
+                        break;
+                      }
+                    }
+                  }
+          
+                  if (isfoundStartTime === false) {
+                    task.sample.startTime = null;
+                    task.sample.saccade_delay = null;
+                    // console.log(i+"번쨰"+"saccade_delay 못찾음");
+                  }
+          
+                  let isFoundEndTime = false;
+          
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      j < gazeArr.length - 3 &&
+                      task.sample.startTime !== null &&
+                      gazeArr[j].relTime * 1 >= task.sample.startTime * 1
+                    ) {
+                      if (
+                        gazeArr[j].xdegree === null ||
+                        gazeArr[j].ydegree === null ||
+                        gazeArr[j + 1].xdegree === null ||
+                        gazeArr[j + 1].ydegree === null ||
+                        gazeArr[j + 2].xdegree === null ||
+                        gazeArr[j + 2].ydegree === null ||
+                        task.B_mean_xdegree === null ||
+                        task.B_mean_ydegree === null
+                      ) {
+                        continue;
+                      }
+          
+                      //gazeArr[j].xdegree , gazeArr[j].ydegree
+                      //와 거리가
+                      // 0.5 이상인친구가
+                      //A_mean_xdegree ,A_mean_ydegree
+                      if (
+                        distance([gazeArr[j].xdegree, gazeArr[j].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <=
+                          task.sample.fixation_threshold &&
+                        distance([gazeArr[j + 1].xdegree, gazeArr[j + 1].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <=
+                          task.sample.fixation_threshold &&
+                        distance([gazeArr[j + 2].xdegree, gazeArr[j + 2].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <=
+                          task.sample.fixation_threshold
+                      ) {
+                        task.sample.endTime = gazeArr[j].relTime * 1;
+                        task.sample.saccade_duration = task.sample.endTime - task.sample.startTime;
+                        task.sample.saccade_speed = task.sample.saccade_distance / task.sample.saccade_duration;
+                        isFoundEndTime = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (isFoundEndTime === false) {
+                    task.sample.endTime = null;
+                    task.sample.saccade_duration = null;
+                    task.sample.saccade_speed = null;
+                  }
+          
+                  // 여기서도 제외를 해야하는데...
+                  let B_xydiff_arr = [];
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 + task.duration * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1 + task.duration * 1
+                    ) {
+                      if (
+                        gazeArr[j].xdegree === null ||
+                        gazeArr[j].ydegree === null ||
+                        task.B_mean_xdegree === null ||
+                        task.B_mean_ydegree === null
+                      ) {
+                        continue;
+                      }
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        if (
+                          distance([0, temp.B_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.B_std_xdegree &&
+                          distance([0, temp.B_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.B_std_ydegree
+                        ) {
+                          B_xydiff_arr.push(
+                            distance([task.B_mean_xdegree, task.B_mean_ydegree], [gazeArr[j].xdegree, gazeArr[j].ydegree])
+                          );
+                        }
+                      }
+                    }
+                  }
+          
+                  task.sample.fixation_stability = (B_xydiff_arr.length && std(B_xydiff_arr)) || null;
+                } else if (task.analysis.type === "pursuit") {
+                  let rotation_dataset = [];
+                  let rdx = [];
+                  let rdy = [];
+                  let homogeneous_linear_dataset = [];
+          
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 &&
+                      gazeArr[j].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1
+                    ) {
+                      //startWaitTime  ~  relativeEndTime - endWaitTime
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        rdx.push(gazeArr[j].xdegree);
+                        rdy.push(gazeArr[j].ydegree);
+                      }
+          
+                      //startWaitTime
+                      // ax^2 + bxy + cy^2 + dx + ey + f = 0; //식을두고,
+                      // x^2 , xy , y^2 , x , y , 1
+                      homogeneous_linear_dataset.push([
+                        gazeArr[j].xdegree * gazeArr[j].xdegree, //X^2
+                        gazeArr[j].xdegree * gazeArr[j].ydegree, //XY
+                        gazeArr[j].ydegree * gazeArr[j].ydegree, // Y^2
+                        gazeArr[j].xdegree, //X
+                        gazeArr[j].ydegree, //Y
+                      ]);
+                    }
+                  }
+          
+                  let rdxmean = rdx.length ? mean(rdx) : null;
+                  let rdymean = rdy.length ? mean(rdy) : null;
+          
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 &&
+                      gazeArr[j].relTime * 1 <= task.relativeEndTime - task.endWaitTime * 1
+                    ) {
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null && rdxmean !== null && rdymean !== null) {
+                        rotation_dataset.push([gazeArr[j].xdegree - rdxmean, gazeArr[j].ydegree - rdymean]);
+                      }
+          
+                      //startWaitTime  ~  relativeEndTime - endWaitTime
+          
+                      //startWaitTime
+                    }
+                  }
+          
+                  if (rotation_dataset.length) {
+                    const { u, v, q } = SVD(rotation_dataset);
+                    // const resnew = SVD(homogeneous_linear_dataset,false,true);
+          
+                    task.rotation_dataset = {
+                      rdxmean: rdxmean,
+                      rdymean: rdymean,
+                      data: rotation_dataset,
+                      u: u, //1202 * 2
+                      v: v, //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
+                      q: q, // 1*2
+          
+                      mq: [q[0] * Math.sqrt(2 / rotation_dataset.length), q[1] * Math.sqrt(2 / rotation_dataset.length)], //(x/q[0])^2 + (y/q[1])^2 = 1 타원
+                      //sqrt(2/N) * U * diag(S)  회전을 제외 U
                     };
-
-                    temp.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) || null;
-                    temp.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) || null;
-                    temp.A_std_ydegree = (A_ydegree_arr.length && std(A_ydegree_arr)) || null;
-                    temp.A_std_xdegree = (A_xdegree_arr.length && std(A_xdegree_arr)) || null;
-
-
-                    temp.B_mean_ydegree = (B_ydegree_arr.length && mean(B_ydegree_arr)) || null;
-                    temp.B_mean_xdegree = (B_xdegree_arr.length && mean(B_xdegree_arr)) || null;
-                    temp.B_std_ydegree = (B_ydegree_arr.length && std(B_ydegree_arr)) || null;
-                    temp.B_std_xdegree = (B_xdegree_arr.length && std(B_xdegree_arr)) || null;
-                    A_ydegree_arr = [];
-                    A_xdegree_arr = [];
-                    B_ydegree_arr = [];
-                    B_xdegree_arr = [];
-                    //2표준편차밖을 제외하고 다시 구함
-                    for (let j = 0; j < gazeArr.length; j++) {
-
-                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1 - 2) &&
-                            gazeArr[j].relTime * 1 <= task.startWaitTime * 1) {
-                            if (task.stabletime.A_s === null) {
-                                task.stabletime.A_s = gazeArr[j].relTime;
-                            }
-                            task.stabletime.A_e = gazeArr[j].relTime;
-
-
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
-                                if (distance([0, temp.A_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.A_std_xdegree) {
-                                    A_xdegree_arr.push(gazeArr[j].xdegree);
-                                }
-                                if (distance([0, temp.A_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.A_std_ydegree) {
-                                    A_ydegree_arr.push(gazeArr[j].ydegree);
-                                }
-
-
-                            }
-
-                        }
-                        else if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1 + task.duration * 1 - 2)
-                            && gazeArr[j].relTime * 1 <= (task.startWaitTime * 1 + task.duration * 1)) {
-                            if (task.stabletime.B_s === null) {
-                                task.stabletime.B_s = gazeArr[j].relTime;
-                            }
-                            task.stabletime.B_e = gazeArr[j].relTime;
-
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
-                                if (distance([0, temp.B_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.B_std_xdegree) {
-                                    B_xdegree_arr.push(gazeArr[j].xdegree);
-                                }
-                                if (distance([0, temp.B_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.B_std_ydegree) {
-                                    B_ydegree_arr.push(gazeArr[j].ydegree);
-                                }
-                            }
-                        }
-                    }
-                    task.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) || null;
-                    task.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) || null;
-                    task.A_std_ydegree = (A_ydegree_arr.length && std(A_ydegree_arr)) || null;
-                    task.A_std_xdegree = (A_xdegree_arr.length && std(A_xdegree_arr)) || null;
-
-
-                    task.B_mean_ydegree = (B_ydegree_arr.length && mean(B_ydegree_arr)) || null;
-                    task.B_mean_xdegree = (B_xdegree_arr.length && mean(B_xdegree_arr)) || null;
-                    task.B_std_ydegree = (B_ydegree_arr.length && std(B_ydegree_arr)) || null;
-                    task.B_std_xdegree = (B_xdegree_arr.length && std(B_xdegree_arr)) || null;
-
-
-                    let saccade_distance;
-                    if (task.A_mean_xdegree !== null && task.A_mean_ydegree !== null &&
-                        task.B_mean_xdegree !== null && task.B_mean_ydegree !== null) {
-                        saccade_distance = distance([task.A_mean_xdegree, task.A_mean_ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]);
-                    }
-
-
-                    task.sample = {
-                        start_position: {
-                            x: task.A_mean_xdegree,
-                            y: task.A_mean_ydegree
-                        },
-                        end_position: {
-                            x: task.B_mean_xdegree,
-                            y: task.B_mean_ydegree
-                        },
-                        saccade_distance: saccade_distance,
-                        fixation_threshold: 1,
-                        startTime: null,
-                        endTime: null,
-                        saccade_delay: null,
-                        saccade_duration: null,
-                        saccade_speed: null, //degree / sec
-                        fixation_stability: null,
-
-                    }
-
-
-                    let isfoundStartTime = false;
-                    for (let j = 0; j < gazeArr.length; j++) {
-
-                        if (j < gazeArr.length - 3 && gazeArr[j].relTime * 1 >= task.startWaitTime * 1) {
-                            //gazeArr[j].xdegree , gazeArr[j].ydegree
-                            //와 거리가
-                            // 0.5 이상인친구가
-                            //A_mean_xdegree ,A_mean_ydegree 
-                            if (gazeArr[j].xdegree === null || gazeArr[j].ydegree === null ||
-                                gazeArr[j + 1].xdegree === null || gazeArr[j + 1].ydegree === null ||
-                                gazeArr[j + 2].xdegree === null || gazeArr[j + 2].ydegree === null ||
-                                task.A_mean_xdegree !== null || task.A_mean_ydegree !== null) {
-                                break;
-                            }
-
-                            if (
-                                distance([gazeArr[j].xdegree, gazeArr[j].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold
-                                && distance([gazeArr[j + 1].xdegree, gazeArr[j + 1].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold
-                                && distance([gazeArr[j + 2].xdegree, gazeArr[j + 2].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold) {
-                                task.sample.startTime = gazeArr[j].relTime * 1;
-                                task.sample.saccade_delay = gazeArr[j].relTime * 1 - task.startWaitTime * 1;
-                                isfoundStartTime = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isfoundStartTime === false) {
-                        task.sample.startTime = null;
-                        task.sample.saccade_delay = null;
-                    }
-
-
-                    let isFoundEndTime = false;
-
-                    for (let j = 0; j < gazeArr.length; j++) {
-                        if (j < gazeArr.length - 3 && task.sample.startTime !== null && gazeArr[j].relTime * 1 >= task.sample.startTime * 1) {
-
-                            if (gazeArr[j].xdegree === null || gazeArr[j].ydegree === null ||
-                                gazeArr[j + 1].xdegree === null || gazeArr[j + 1].ydegree === null ||
-                                gazeArr[j + 2].xdegree === null || gazeArr[j + 2].ydegree === null ||
-                                task.B_mean_xdegree === null || task.B_mean_ydegree === null) {
-                                break;
-                            }
-
-                            //gazeArr[j].xdegree , gazeArr[j].ydegree
-                            //와 거리가
-                            // 0.5 이상인친구가
-                            //A_mean_xdegree ,A_mean_ydegree 
-                            if (
-                                distance([gazeArr[j].xdegree, gazeArr[j].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <= task.sample.fixation_threshold
-                                && distance([gazeArr[j + 1].xdegree, gazeArr[j + 1].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <= task.sample.fixation_threshold
-                                && distance([gazeArr[j + 2].xdegree, gazeArr[j + 2].ydegree], [task.B_mean_xdegree, task.B_mean_ydegree]) <= task.sample.fixation_threshold) {
-                                task.sample.endTime = gazeArr[j].relTime * 1;
-                                task.sample.saccade_duration = task.sample.endTime - task.sample.startTime;
-                                task.sample.saccade_speed = task.sample.saccade_distance / task.sample.saccade_duration;
-                                isFoundEndTime = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (isFoundEndTime === false) {
-                        task.sample.endTime = null;
-                        task.sample.saccade_duration = null;
-                        task.sample.saccade_speed = null;
-                    }
-
-
-                    // 여기서도 제외를 해야하는데...
-                    let B_xydiff_arr = [];
-                    for (let j = 0; j < gazeArr.length; j++) {
-
-                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1 + task.duration * 1 - 2)
-                            && gazeArr[j].relTime * 1 <= (task.startWaitTime * 1 + task.duration * 1)) {
-
-                            if (gazeArr[j].xdegree === null || gazeArr[j].ydegree === null ||
-                                task.B_mean_xdegree === null || task.B_mean_ydegree === null) {
-                                break;
-                            }
-
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
-                                if (distance([0, temp.B_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.B_std_xdegree
-                                    && distance([0, temp.B_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.B_std_ydegree) {
-                                    B_xydiff_arr.push(distance([task.B_mean_xdegree, task.B_mean_ydegree], [gazeArr[j].xdegree, gazeArr[j].ydegree]));
-                                }
-                            }
-                        }
-
-                    }
-
-
-                    task.sample.fixation_stability = (B_xydiff_arr.length && std(B_xydiff_arr)) || null;
-
-
-
-                }
-                else if (task.analysis.type === 'pursuit') {
-
-
-                    let rotation_dataset = [];
-                    let rdx = [];
-                    let rdy = [];
-                    let homogeneous_linear_dataset = [];
-
-                    for (let j = 0; j < gazeArr.length; j++) {
-
-                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1) &&
-                            gazeArr[j].relTime * 1 <= (task.relativeEndTime - task.endWaitTime * 1)) {
-
-
-                            //startWaitTime  ~  relativeEndTime - endWaitTime 
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
-                                rdx.push(gazeArr[j].xdegree);
-                                rdy.push(gazeArr[j].ydegree);
-                            }
-
-
-
-                            //startWaitTime 
-                            // ax^2 + bxy + cy^2 + dx + ey + f = 0; //식을두고,
-                            // x^2 , xy , y^2 , x , y , 1
-                            homogeneous_linear_dataset.push([
-                                gazeArr[j].xdegree * gazeArr[j].xdegree, //X^2
-                                gazeArr[j].xdegree * gazeArr[j].ydegree, //XY
-                                gazeArr[j].ydegree * gazeArr[j].ydegree, // Y^2
-                                gazeArr[j].xdegree, //X
-                                gazeArr[j].ydegree, //Y
-                            ])
-
-                        }
-                    }
-
-
-
-                    let rdxmean = rdx.length ? mean(rdx) : null;
-                    let rdymean = rdy.length ? mean(rdy) : null;
-
-
-                    for (let j = 0; j < gazeArr.length; j++) {
-
-                        if (gazeArr[j].relTime * 1 >= (task.startWaitTime * 1) &&
-                            gazeArr[j].relTime * 1 <= (task.relativeEndTime - task.endWaitTime * 1)) {
-                            if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null &&
-                                rdxmean !== null && rdymean !== null) {
-                                rotation_dataset.push([gazeArr[j].xdegree - rdxmean, gazeArr[j].ydegree - rdymean]);
-                            }
-
-                            //startWaitTime  ~  relativeEndTime - endWaitTime 
-
-                            //startWaitTime 
-
-                        }
-                    }
-
-                    if (rotation_dataset.length) {
-                        const { u, v, q } = SVD(rotation_dataset);
-                        // const resnew = SVD(homogeneous_linear_dataset,false,true);
-
-
-                        task.rotation_dataset = {
-                            rdxmean: rdxmean,
-                            rdymean: rdymean,
-                            data: rotation_dataset,
-                            u: u, //1202 * 2
-                            v: v, //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
-                            q: q, // 1*2
-
-                            mq: [q[0] * Math.sqrt(2 / rotation_dataset.length), q[1] * Math.sqrt(2 / rotation_dataset.length)], //(x/q[0])^2 + (y/q[1])^2 = 1 타원
-                            //sqrt(2/N) * U * diag(S)  회전을 제외 U
-
-                        }
-                    }
-                    else {
-                        task.rotation_dataset = {
-                            rdxmean: rdxmean,
-                            rdymean: rdymean,
-                            data: rotation_dataset,
-                            u: null, //1202 * 2
-                            v: null, //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
-                            q: null, // 1*2
-
-                            mq: [null, null], //(x/q[0])^2 + (y/q[1])^2 = 1 타원
-                            //sqrt(2/N) * U * diag(S)  회전을 제외 U
-
-                        }
-                    }
-
-                    task.sample = {
-
+                  } else {
+                    task.rotation_dataset = {
+                      rdxmean: rdxmean,
+                      rdymean: rdymean,
+                      data: rotation_dataset,
+                      u: null, //1202 * 2
+                      v: null, //2*2   //v는 항등행렬로 치고 무시합시다. (첫 회전 X)
+                      q: null, // 1*2
+          
+                      mq: [null, null], //(x/q[0])^2 + (y/q[1])^2 = 1 타원
+                      //sqrt(2/N) * U * diag(S)  회전을 제외 U
                     };
-
-                    task.sample.H_radius = task.rotation_dataset.mq[0];
-                    task.sample.V_radius = task.rotation_dataset.mq[1];
-                    task.sample.H_offset = rdxmean;
-                    task.sample.V_offset = rdymean;
-                    task.sample.period = (task.relativeEndTime - task.endWaitTime - task.startWaitTime) / task.analysis.rotationCount;
-
-                    //소장님과 토론할것
-
-                    //  [ [q[0],0][0,q[1]] ]  //만들면좋음
-
-                    // 루트 1/1202 * 
-
-                    let fitArr = [];
-
-                    let diffArr = [];
-
-
-                    console.log("task.blinkArr", task.blinkArr);
-                    for (let k = 0; k < gazeArr.length; k++) {
-
-                        const direction = task.analysis.direction;
-
-                        let fit = {
-                            relTime: gazeArr[k].relTime,
-                        }
-                        if (direction === 'clockwise') {
-                            //  a*sin(2pi/주기*X)+오프셋;
-
-                            fit.xdegreefit = task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period
-                                * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
-
-                            fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
-                        }
-                        else if (direction === 'anticlockwise') {
-                            fit.xdegreefit = -task.sample.H_radius * Math.sin(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.H_offset;
-                            fit.ydegreefit = -task.sample.V_radius * Math.cos(2 * Math.PI / task.sample.period * (gazeArr[k].relTime - task.startWaitTime)) + task.sample.V_offset;
-                        }
-
-                        fitArr.push(fit);
-
-                        if (gazeArr[k].relTime >= task.startWaitTime && gazeArr[k].relTime <= (task.relativeEndTime - task.endWaitTime)) {
-                            if (gazeArr[k].xdegree !== null && gazeArr[k].ydegree !== null) {
-
-
-                                let isnot_blink = true;
-
-                                for (let p = 0; p < task.blinkArr.length; p++) {
-                                    // console.log("task.blinkArr[p]",task.blinkArr[p]);
-                                    if (task.blinkArr[p].GRB_start_index <= k && task.blinkArr[p].GRB_end_index >= k) {
-                                        // console.log("제외해야함")
-                                        isnot_blink = false;
-                                        break;
-                                    }
-                                }
-
-                                if (isnot_blink === true) {
-
-                                    if (gazeArr[k].xdegree !== null && gazeArr[k].ydegree !== null) {
-                                        diffArr.push(distance([[gazeArr[k].xdegree, gazeArr[k].ydegree],
-                                        [fit.xdegreefit, fit.ydegreefit]]));
-                                    }
-
-                                }
-
-                                // diffArr.push(distance([[gazeArr[k].xdegree, gazeArr[k].ydegree],
-                                //     [fit.xdegreefit, fit.ydegreefit]]));
-
-                            }
-
-                        }
+                  }
+          
+                  task.sample = {};
+          
+                  task.sample.H_radius = task.rotation_dataset.mq[0];
+                  task.sample.V_radius = task.rotation_dataset.mq[1];
+                  task.sample.H_offset = rdxmean;
+                  task.sample.V_offset = rdymean;
+                  task.sample.period =
+                    (task.relativeEndTime - task.endWaitTime - task.startWaitTime) / task.analysis.rotationCount;
+          
+                  //소장님과 토론할것
+          
+                  //  [ [q[0],0][0,q[1]] ]  //만들면좋음
+          
+                  // 루트 1/1202 *
+          
+                  let fitArr = [];
+          
+                  let diffArr = [];
+          
+                  console.log("task.blinkArr", task.blinkArr);
+                  for (let k = 0; k < gazeArr.length; k++) {
+                    const direction = task.analysis.direction;
+          
+                    let fit = {
+                      relTime: gazeArr[k].relTime,
+                    };
+                    if (direction === "clockwise") {
+                      //  a*sin(2pi/주기*X)+오프셋;
+          
+                      fit.xdegreefit =
+                        task.sample.H_radius *
+                          Math.sin(((2 * Math.PI) / task.sample.period) * (gazeArr[k].relTime - task.startWaitTime)) +
+                        task.sample.H_offset;
+          
+                      fit.ydegreefit =
+                        -task.sample.V_radius *
+                          Math.cos(((2 * Math.PI) / task.sample.period) * (gazeArr[k].relTime - task.startWaitTime)) +
+                        task.sample.V_offset;
+                    } else if (direction === "anticlockwise") {
+                      fit.xdegreefit =
+                        -task.sample.H_radius *
+                          Math.sin(((2 * Math.PI) / task.sample.period) * (gazeArr[k].relTime - task.startWaitTime)) +
+                        task.sample.H_offset;
+                      fit.ydegreefit =
+                        -task.sample.V_radius *
+                          Math.cos(((2 * Math.PI) / task.sample.period) * (gazeArr[k].relTime - task.startWaitTime)) +
+                        task.sample.V_offset;
                     }
-
-                    task.diffArr = diffArr.length ? diffArr : null;
-                    task.sample.diff_fit_err = (diffArr.length && mean(diffArr)) || null;
-                    task.fitArr = fitArr;
-                    // console.log("여기볼게")
-
+          
+                    fitArr.push(fit);
+          
+                    if (
+                      gazeArr[k].relTime >= task.startWaitTime &&
+                      gazeArr[k].relTime <= task.relativeEndTime - task.endWaitTime
+                    ) {
+                      if (gazeArr[k].xdegree !== null && gazeArr[k].ydegree !== null) {
+                        let isnot_blink = true;
+          
+                        for (let p = 0; p < task.blinkArr.length; p++) {
+                          // console.log("task.blinkArr[p]",task.blinkArr[p]);
+                          if (task.blinkArr[p].GRB_start_index <= k && task.blinkArr[p].GRB_end_index >= k) {
+                            // console.log("제외해야함")
+                            isnot_blink = false;
+                            break;
+                          }
+                        }
+          
+                        if (isnot_blink === true) {
+                          if (gazeArr[k].xdegree !== null && gazeArr[k].ydegree !== null) {
+                            diffArr.push(
+                              distance([
+                                [gazeArr[k].xdegree, gazeArr[k].ydegree],
+                                [fit.xdegreefit, fit.ydegreefit],
+                              ])
+                            );
+                          }
+                        }
+          
+                        // diffArr.push(distance([[gazeArr[k].xdegree, gazeArr[k].ydegree],
+                        //     [fit.xdegreefit, fit.ydegreefit]]));
+                      }
+                    }
+                  }
+          
+                  task.diffArr = diffArr.length ? diffArr : null;
+                  task.sample.diff_fit_err = (diffArr.length && mean(diffArr)) || null;
+                  task.fitArr = fitArr;
+                  // console.log("여기볼게")
                 }
-            }
-            console.log("taskArr 작업끝");
-            let saveData;
-            if (data.screeningType === 'saccade') {
+              }
+              console.log("taskArr 작업끝");
+              let saveData;
+              if (data.screeningType === "saccade") {
                 let up_saccade_delay_arr = [];
                 let down_saccade_delay_arr = [];
                 let left_saccade_delay_arr = [];
                 let right_saccade_delay_arr = [];
-
+          
                 let up_saccade_speed_arr = [];
                 let down_saccade_speed_arr = [];
                 let left_saccade_speed_arr = [];
                 let right_saccade_speed_arr = [];
-
+          
                 let up_fixation_stability_arr = [];
                 let down_fixation_stability_arr = [];
                 let left_fixation_stability_arr = [];
                 let right_fixation_stability_arr = [];
-
+          
                 for (let i = 0; i < taskArr.length; i++) {
-                    const task = taskArr[i];
-
-                    const direction = task.analysis.direction;
-                    if (direction === 'top') {
-                        if (task.sample.saccade_delay !== null) {
-                            up_saccade_delay_arr.push(task.sample.saccade_delay);
-                        }
-                        if (task.sample.saccade_speed !== null) {
-                            up_saccade_speed_arr.push(task.sample.saccade_speed);
-                        }
-                        if (task.sample.fixation_stability !== null) {
-                            up_fixation_stability_arr.push(task.sample.fixation_stability);
-                        }
-
+                  const task = taskArr[i];
+          
+                  const direction = task.analysis.direction;
+                  if (direction === "top") {
+                    if (task.sample.saccade_delay !== null) {
+                      up_saccade_delay_arr.push(task.sample.saccade_delay);
                     }
-                    else if (direction === 'bottom') {
-                        if (task.sample.saccade_delay !== null) {
-                            down_saccade_delay_arr.push(task.sample.saccade_delay);
-                        }
-                        if (task.sample.saccade_speed !== null) {
-                            down_saccade_speed_arr.push(task.sample.saccade_speed);
-                        }
-                        if (task.sample.fixation_stability !== null) {
-                            down_fixation_stability_arr.push(task.sample.fixation_stability);
-                        }
-
+                    if (task.sample.saccade_speed !== null) {
+                      up_saccade_speed_arr.push(task.sample.saccade_speed);
                     }
-                    else if (direction === 'left') {
-                        if (task.sample.saccade_delay !== null) {
-                            left_saccade_delay_arr.push(task.sample.saccade_delay);
-                        }
-                        if (task.sample.saccade_speed !== null) {
-                            left_saccade_speed_arr.push(task.sample.saccade_speed);
-                        }
-                        if (task.sample.fixation_stability !== null) {
-                            left_fixation_stability_arr.push(task.sample.fixation_stability);
-
-                        }
+                    if (task.sample.fixation_stability !== null) {
+                      up_fixation_stability_arr.push(task.sample.fixation_stability);
                     }
-                    else if (direction === 'right') {
-                        if (task.sample.saccade_delay !== null) {
-                            right_saccade_delay_arr.push(task.sample.saccade_delay);
-                        }
-                        if (task.sample.saccade_speed !== null) {
-                            right_saccade_speed_arr.push(task.sample.saccade_speed);
-                        }
-                        if (task.sample.fixation_stability !== null) {
-                            right_fixation_stability_arr.push(task.sample.fixation_stability);
-                        }
-
+                  } else if (direction === "bottom") {
+                    if (task.sample.saccade_delay !== null) {
+                      down_saccade_delay_arr.push(task.sample.saccade_delay);
                     }
+                    if (task.sample.saccade_speed !== null) {
+                      down_saccade_speed_arr.push(task.sample.saccade_speed);
+                    }
+                    if (task.sample.fixation_stability !== null) {
+                      down_fixation_stability_arr.push(task.sample.fixation_stability);
+                    }
+                  } else if (direction === "left") {
+                    if (task.sample.saccade_delay !== null) {
+                      left_saccade_delay_arr.push(task.sample.saccade_delay);
+                    }
+                    if (task.sample.saccade_speed !== null) {
+                      left_saccade_speed_arr.push(task.sample.saccade_speed);
+                    }
+                    if (task.sample.fixation_stability !== null) {
+                      left_fixation_stability_arr.push(task.sample.fixation_stability);
+                    }
+                  } else if (direction === "right") {
+                    if (task.sample.saccade_delay !== null) {
+                      right_saccade_delay_arr.push(task.sample.saccade_delay);
+                    }
+                    if (task.sample.saccade_speed !== null) {
+                      right_saccade_speed_arr.push(task.sample.saccade_speed);
+                    }
+                    if (task.sample.fixation_stability !== null) {
+                      right_fixation_stability_arr.push(task.sample.fixation_stability);
+                    }
+                  }
                 }
-
+          
                 saveData = {
-                    up_saccade_delay: (up_saccade_delay_arr.length && mean(up_saccade_delay_arr)) || null,
-                    down_saccade_delay: (down_saccade_delay_arr.length && mean(down_saccade_delay_arr)) || null,
-                    left_saccade_delay: (left_saccade_delay_arr.length && mean(left_saccade_delay_arr)) || null,
-                    right_saccade_delay: (right_saccade_delay_arr.length && mean(right_saccade_delay_arr)) || null,
-
-                    up_saccade_speed: (up_saccade_speed_arr.length && mean(up_saccade_speed_arr)) || null,
-                    down_saccade_speed: (down_saccade_speed_arr.length && mean(down_saccade_speed_arr)) || null,
-                    left_saccade_speed: (left_saccade_speed_arr.length && mean(left_saccade_speed_arr)) || null,
-                    right_saccade_speed: (right_saccade_speed_arr.length && mean(right_saccade_speed_arr)) || null,
-
-
-                    up_fixation_stability: (up_fixation_stability_arr.length && mean(up_fixation_stability_arr)) || null,
-                    down_fixation_stability: (down_fixation_stability_arr.length && mean(down_fixation_stability_arr)) || null,
-                    left_fixation_stability: (left_fixation_stability_arr.length && mean(left_fixation_stability_arr)) || null,
-                    right_fixation_stability: (right_fixation_stability_arr.length && mean(right_fixation_stability_arr)) || null,
-                }
+                  up_saccade_delay: (up_saccade_delay_arr.length && mean(up_saccade_delay_arr)) || null,
+                  down_saccade_delay: (down_saccade_delay_arr.length && mean(down_saccade_delay_arr)) || null,
+                  left_saccade_delay: (left_saccade_delay_arr.length && mean(left_saccade_delay_arr)) || null,
+                  right_saccade_delay: (right_saccade_delay_arr.length && mean(right_saccade_delay_arr)) || null,
+          
+                  up_saccade_speed: (up_saccade_speed_arr.length && mean(up_saccade_speed_arr)) || null,
+                  down_saccade_speed: (down_saccade_speed_arr.length && mean(down_saccade_speed_arr)) || null,
+                  left_saccade_speed: (left_saccade_speed_arr.length && mean(left_saccade_speed_arr)) || null,
+                  right_saccade_speed: (right_saccade_speed_arr.length && mean(right_saccade_speed_arr)) || null,
+          
+                  up_fixation_stability: (up_fixation_stability_arr.length && mean(up_fixation_stability_arr)) || null,
+                  down_fixation_stability: (down_fixation_stability_arr.length && mean(down_fixation_stability_arr)) || null,
+                  left_fixation_stability: (left_fixation_stability_arr.length && mean(left_fixation_stability_arr)) || null,
+                  right_fixation_stability: (right_fixation_stability_arr.length && mean(right_fixation_stability_arr)) || null,
+                };
                 // taskArr.saveData=saveData;
                 console.log("saveData", saveData);
-            }
-            else if (data.screeningType === 'pursuit') {
-                console.log("분석 pursuit")
-
-
+              } else if (data.screeningType === "pursuit") {
+                console.log("분석 pursuit");
+          
                 let clockwiseArr = [];
                 let anticlockwiseArr = [];
                 for (let i = 0; i < taskArr.length; i++) {
-                    const task = taskArr[i];
-
-                    const direction = task.analysis.direction;
-                    console.log("direction", direction);
-                    if (direction === 'clockwise') {
-                        if (task.sample.diff_fit_err !== null) {
-                            clockwiseArr.push(task.sample.diff_fit_err);
-                        }
-
+                  const task = taskArr[i];
+          
+                  const direction = task.analysis.direction;
+                  console.log("direction", direction);
+                  if (direction === "clockwise") {
+                    if (task.sample.diff_fit_err !== null) {
+                      clockwiseArr.push(task.sample.diff_fit_err);
                     }
-                    else if (direction === 'anticlockwise') {
-                        if (task.sample.diff_fit_err !== null) {
-                            anticlockwiseArr.push(task.sample.diff_fit_err);
-                        }
-
+                  } else if (direction === "anticlockwise") {
+                    if (task.sample.diff_fit_err !== null) {
+                      anticlockwiseArr.push(task.sample.diff_fit_err);
                     }
-
+                  }
                 }
-
+          
                 saveData = {
-                    clockwise_err: (clockwiseArr.length && mean(clockwiseArr)) || null,
-                    anticlockwise_err: (anticlockwiseArr.length && mean(anticlockwiseArr)) || null,
-                }
-
-
-
-            }
-            console.log("savedata 객체작업끝")
+                  clockwise_err: (clockwiseArr.length && mean(clockwiseArr)) || null,
+                  anticlockwise_err: (anticlockwiseArr.length && mean(anticlockwiseArr)) || null,
+                };
+              } else if (data.screeningType === "antisaccade") {
+                saveData = {
+                  ...s3data.analysis,
+                  right_antisaccade_delay: 10,
+                };
+              }
+          
+          
+              console.log("savedata 객체작업끝");
             console.log("taskArr", taskArr);
 
 
