@@ -766,10 +766,10 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           clockwise_err: clockwiseArr.length && (0, _mathjs.mean)(clockwiseArr) || null,
           anticlockwise_err: anticlockwiseArr.length && (0, _mathjs.mean)(anticlockwiseArr) || null
         };
-      } else if (data.screeningType === "antisaccade") {
-        saveData = _objectSpread(_objectSpread({}, s3data.analysis), {}, {
-          right_antisaccade_delay: 10
-        });
+      } else if (data.screeningType === "antisaccade") {// saveData = {
+        //   ...s3data.analysis,
+        //   right_antisaccade_delay: 10,
+        // };
       }
 
       console.log("savedata 객체작업끝");

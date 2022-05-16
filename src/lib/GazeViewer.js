@@ -834,10 +834,10 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                   anticlockwise_err: (anticlockwiseArr.length && mean(anticlockwiseArr)) || null,
                 };
               } else if (data.screeningType === "antisaccade") {
-                saveData = {
-                  ...s3data.analysis,
-                  right_antisaccade_delay: 10,
-                };
+                // saveData = {
+                //   ...s3data.analysis,
+                //   right_antisaccade_delay: 10,
+                // };
               }
           
           
