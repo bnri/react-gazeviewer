@@ -213,6 +213,12 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       console.log("원본json", data); // console.log(data);
 
       var _taskArr = [];
+      var MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
+      var pixel_per_cm = data.monitorInform.MONITOR_PX_PER_CM; //1cm 당 pixel
+
+      var degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
+      var w = data.screenW;
+      var h = data.screenH; //taskArr 의 trial 수만큼 반복
 
       for (var i = 0; i < data.screeningObjectList.length; i++) {
         var obj = _objectSpread(_objectSpread({}, data.screeningObjectList[i]), {}, {
@@ -222,26 +228,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         _taskArr.push(obj);
       }
 
-      var MONITOR_PX_PER_CM = data.monitorInform.MONITOR_PX_PER_CM;
-      var pixel_per_cm = data.monitorInform.MONITOR_PX_PER_CM; //1cm 당 pixel
-
-      var degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
-      var w = data.screenW;
-      var h = data.screenH; //taskArr 의 trial 수만큼 반복
-
-      for (var _i2 = 0; _i2 < data.screeningObjectList.length; _i2++) {
-        var _obj = _objectSpread(_objectSpread({}, data.screeningObjectList[_i2]), {}, {
-          gazeData: data.taskArr[_i2]
-        });
-
-        _taskArr.push(_obj);
-      }
-
       console.log("데이터 형변환끝");
       console.log("taskArr 작업");
 
-      for (var _i3 = 0; _i3 < _taskArr.length; _i3++) {
-        var task = _taskArr[_i3];
+      for (var _i2 = 0; _i2 < _taskArr.length; _i2++) {
+        var task = _taskArr[_i2];
         var type = task.type;
         var gazeArr = task.gazeData;
         var blink_arr = get_blink_arr(gazeArr);
@@ -678,8 +669,8 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var left_fixation_stability_arr = [];
         var right_fixation_stability_arr = [];
 
-        for (var _i4 = 0; _i4 < _taskArr.length; _i4++) {
-          var _task = _taskArr[_i4];
+        for (var _i3 = 0; _i3 < _taskArr.length; _i3++) {
+          var _task = _taskArr[_i3];
           var _direction = _task.analysis.direction;
 
           if (_direction === 'top') {
@@ -754,8 +745,8 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var clockwiseArr = [];
         var anticlockwiseArr = [];
 
-        for (var _i5 = 0; _i5 < _taskArr.length; _i5++) {
-          var _task2 = _taskArr[_i5];
+        for (var _i4 = 0; _i4 < _taskArr.length; _i4++) {
+          var _task2 = _taskArr[_i4];
           var _direction2 = _task2.analysis.direction;
           console.log("direction", _direction2);
 
@@ -1068,39 +1059,39 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     // console.log("gazeArr",gazeArr);
 
 
-    for (var _i6 = 0; _i6 < gazeArr.length; _i6++) {
-      if (gazeArr[_i6].relTime <= nowTime * 1) {
+    for (var _i5 = 0; _i5 < gazeArr.length; _i5++) {
+      if (gazeArr[_i5].relTime <= nowTime * 1) {
         // console.log("gazeArr[i].target_xdegree?",gazeArr[i]);
         // console.log("target_xdegree:",gazeArr[i].target_xdegree)
         var target_xdata = {
-          x: gazeArr[_i6].relTime * 1000,
-          y: gazeArr[_i6].target_xdegree ? gazeArr[_i6].target_xdegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].target_xdegree ? gazeArr[_i5].target_xdegree : 0
         };
         var target_ydata = {
-          x: gazeArr[_i6].relTime * 1000,
-          y: gazeArr[_i6].target_ydegree ? gazeArr[_i6].target_ydegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].target_ydegree ? gazeArr[_i5].target_ydegree : 0
         };
         var eye_xdata = {
-          x: gazeArr[_i6].relTime * 1000,
-          y: gazeArr[_i6].xdegree !== null ? gazeArr[_i6].xdegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].xdegree !== null ? gazeArr[_i5].xdegree : 0
         };
         var eye_ydata = {
-          x: gazeArr[_i6].relTime * 1000,
-          y: gazeArr[_i6].ydegree !== null ? gazeArr[_i6].ydegree : 0
+          x: gazeArr[_i5].relTime * 1000,
+          y: gazeArr[_i5].ydegree !== null ? gazeArr[_i5].ydegree : 0
         };
 
-        if (task.analysis.type === 'pursuit' && fitArr && fitArr[_i6]) {
-          if (fitArr[_i6].xdegreefit !== null) {
+        if (task.analysis.type === 'pursuit' && fitArr && fitArr[_i5]) {
+          if (fitArr[_i5].xdegreefit !== null) {
             Gdata.fit_x.push({
-              x: gazeArr[_i6].relTime * 1000,
-              y: fitArr[_i6].xdegreefit !== null ? fitArr[_i6].xdegreefit : 0
+              x: gazeArr[_i5].relTime * 1000,
+              y: fitArr[_i5].xdegreefit !== null ? fitArr[_i5].xdegreefit : 0
             });
           }
 
-          if (fitArr[_i6].ydegreefit !== null) {
+          if (fitArr[_i5].ydegreefit !== null) {
             Gdata.fit_y.push({
-              x: gazeArr[_i6].relTime * 1000,
-              y: fitArr[_i6].ydegreefit !== null ? fitArr[_i6].ydegreefit : 0
+              x: gazeArr[_i5].relTime * 1000,
+              y: fitArr[_i5].ydegreefit !== null ? fitArr[_i5].ydegreefit : 0
             });
           }
         }
@@ -1108,11 +1099,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         Gdata.target_x.push(target_xdata);
         Gdata.target_y.push(target_ydata);
 
-        if (gazeArr[_i6].xdegree !== null) {
+        if (gazeArr[_i5].xdegree !== null) {
           Gdata.eye_x.push(eye_xdata);
         }
 
-        if (gazeArr[_i6].ydegree !== null) {
+        if (gazeArr[_i5].ydegree !== null) {
           Gdata.eye_y.push(eye_ydata);
         } // if(fit_x)Gdata.fit_x.push(fit_x);
 
