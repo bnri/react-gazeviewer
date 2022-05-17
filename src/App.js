@@ -7,12 +7,14 @@ import saccade from './lib/datasample/saccade.json';
 import pursuit from './lib/datasample/pursuit.json';
 import antisaccade from './lib/datasample/antisaccade.json';
 import _33 from './lib/datasample/33_pursuit.json';
+import _10 from './lib/datasample/10_antisaccade.json';
+
 function App() {
   const [dataNumber,set_dataNumber] = React.useState(0);
 
   
   const dataArr = React.useMemo(()=>{
-    let da =[saccade,pursuit,antisaccade,_33];
+    let da =[saccade,pursuit,antisaccade,_33,_10];
     for(let i = 0 ; i<da.length; i++){
       let newraw= da[i];
       if(newraw){
@@ -63,6 +65,7 @@ function App() {
             <option value={1}>pursuit</option>
             <option value={2}>antisaccade</option>
             <option value={3}>33_pursuit</option>
+            <option value={4}>10_antisaccade</option>
           </select>
       </div>
 

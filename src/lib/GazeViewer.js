@@ -221,6 +221,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 let blink_arr = get_blink_arr(gazeArr);
                 task.blinkArr = blink_arr;
           
+                // % 로되어있는걸 degree 로 변환작업, 중점이 0,0 x,y degree
                 for (let j = 0; j < gazeArr.length; j++) {
                   let target_pixels = {
                     x: null,
@@ -298,6 +299,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     gazeArr[j].ydegree = null;
                   }
                 }
+
           
                 if (task.analysis.type === "saccade") {
                   let A_ydegree_arr = [];
@@ -724,6 +726,126 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                   task.fitArr = fitArr;
                   // console.log("여기볼게")
                 }
+                else if(task.analysis.type ==="antisaccade"){
+                  let A_ydegree_arr = [];
+                  let A_xdegree_arr = [];
+           
+          
+                  task.stabletime = {
+                    A_s: null,
+                    A_e: null,
+               
+                  };
+          
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1
+                    ) {
+                      if (task.stabletime.A_s === null) {
+                        task.stabletime.A_s = gazeArr[j].relTime;
+                      }
+                      task.stabletime.A_e = gazeArr[j].relTime;
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        A_xdegree_arr.push(gazeArr[j].xdegree);
+                        A_ydegree_arr.push(gazeArr[j].ydegree);
+                      }
+                    } 
+                  }
+          
+                  let temp = {};
+          
+                  temp.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) || null;
+                  temp.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) || null;
+                  temp.A_std_ydegree = (A_ydegree_arr.length && std(A_ydegree_arr)) || null;
+                  temp.A_std_xdegree = (A_xdegree_arr.length && std(A_xdegree_arr)) || null;
+          
+             
+                  A_ydegree_arr = [];
+                  A_xdegree_arr = [];
+               
+                  //2표준편차밖을 제외하고 다시 구함
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (
+                      gazeArr[j].relTime * 1 >= task.startWaitTime * 1 - 2 &&
+                      gazeArr[j].relTime * 1 <= task.startWaitTime * 1
+                    ) {
+                      if (task.stabletime.A_s === null) {
+                        task.stabletime.A_s = gazeArr[j].relTime;
+                      }
+                      task.stabletime.A_e = gazeArr[j].relTime;
+          
+                      if (gazeArr[j].xdegree !== null && gazeArr[j].ydegree !== null) {
+                        if (distance([0, temp.A_mean_xdegree], [0, gazeArr[j].xdegree]) <= temp.A_std_xdegree) {
+                          A_xdegree_arr.push(gazeArr[j].xdegree);
+                        }
+                        if (distance([0, temp.A_mean_ydegree], [0, gazeArr[j].ydegree]) <= temp.A_std_ydegree) {
+                          A_ydegree_arr.push(gazeArr[j].ydegree);
+                        }
+                      }
+                    }
+                  }
+                  task.A_mean_ydegree = (A_ydegree_arr.length && mean(A_ydegree_arr)) || null;
+                  task.A_mean_xdegree = (A_xdegree_arr.length && mean(A_xdegree_arr)) || null;
+                  task.A_std_ydegree = (A_ydegree_arr.length && std(A_ydegree_arr)) || null;
+                  task.A_std_xdegree = (A_xdegree_arr.length && std(A_xdegree_arr)) || null;
+                  task.sample = {
+                    start_position: {
+                      x: task.A_mean_xdegree,
+                      y: task.A_mean_ydegree,
+                    },
+                  
+                    fixation_threshold: 1,
+                    startTime: null,
+                    saccade_delay: null,
+                  };
+
+                  //////흠...
+                  let isfoundStartTime = false;
+                  for (let j = 0; j < gazeArr.length; j++) {
+                    if (j < gazeArr.length - 3 && gazeArr[j].relTime * 1 >= task.startWaitTime * 1) {
+                      //gazeArr[j].xdegree , gazeArr[j].ydegree
+                      //와 거리가
+                      // 0.5 이상인친구가
+                      //A_mean_xdegree ,A_mean_ydegree
+                      if (
+                        gazeArr[j].xdegree === null ||
+                        gazeArr[j].ydegree === null ||
+                        gazeArr[j + 1].xdegree === null ||
+                        gazeArr[j + 1].ydegree === null ||
+                        gazeArr[j + 2].xdegree === null ||
+                        gazeArr[j + 2].ydegree === null ||
+                        task.A_mean_xdegree === null ||
+                        task.A_mean_ydegree === null
+                      ) {              
+                        continue;
+          
+                      }
+          
+                      if (
+                        distance([gazeArr[j].xdegree, gazeArr[j].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >=
+                          task.sample.fixation_threshold &&
+                        distance([gazeArr[j + 1].xdegree, gazeArr[j + 1].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >=
+                          task.sample.fixation_threshold &&
+                        distance([gazeArr[j + 2].xdegree, gazeArr[j + 2].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >=
+                          task.sample.fixation_threshold
+                      ) {
+                        task.sample.startTime = gazeArr[j].relTime * 1;
+                        task.sample.saccade_delay = gazeArr[j].relTime * 1 - task.startWaitTime * 1;
+                        isfoundStartTime = true;
+                        // console.log(i+"번쨰"+"saccade_delay 찾음");
+                        break;
+                      }
+                    }
+                  }
+          
+                  if (isfoundStartTime === false) {
+                    task.sample.startTime = null;
+                    task.sample.saccade_delay = null;
+                    // console.log(i+"번쨰"+"saccade_delay 못찾음");
+                  }
+                }
               }
               console.log("taskArr 작업끝");
               let saveData;
@@ -838,6 +960,28 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 //   ...s3data.analysis,
                 //   right_antisaccade_delay: 10,
                 // };
+                let right_antisaccade_delay_arr = [];
+                let left_antisaccade_delay_arr = [];
+                for (let i = 0; i < taskArr.length; i++) {
+                  const task = taskArr[i];
+          
+                  const direction = task.analysis.direction;
+                  if (direction === "right") {
+                    if (task.sample.saccade_delay !== null) {
+                      right_antisaccade_delay_arr.push(task.sample.saccade_delay);
+                    }
+                  
+                  } else if (direction === "left") {
+                    if (task.sample.saccade_delay !== null) {
+                      left_antisaccade_delay_arr.push(task.sample.saccade_delay);
+                    }
+                  }
+                }
+                saveData = {
+                  right_antisaccade_delay: (right_antisaccade_delay_arr.length && mean(right_antisaccade_delay_arr)) || null,
+                  left_antisaccade_delay: (left_antisaccade_delay_arr.length && mean(left_antisaccade_delay_arr)) || null,
+                }
+                console.log("saveData",saveData);
               }
           
           
@@ -1396,6 +1540,56 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
             ];
 
         }
+        else if(taskArr[taskNumber].analysis.type ==='antisaccade'){
+          annotation = [
+            {
+                drawTime: "afterDatasetsDraw", // (default)
+                type: "box",
+                mode: "horizontal",
+                yScaleID: "degree",
+                xScaleID: "timeid",
+                // value: '7.5',
+                borderColor: "green",
+                backgroundColor: "rgba(0,255,0,0.05)",
+                borderWidth: 1,
+                xMin: taskArr[taskNumber].stabletime.A_s * 1000,
+                xMax: taskArr[taskNumber].stabletime.A_e * 1000,
+                yMin: taskArr[taskNumber].A_mean_xdegree - taskArr[taskNumber].A_std_xdegree * 2,
+                yMax: taskArr[taskNumber].A_mean_xdegree + taskArr[taskNumber].A_std_xdegree * 2
+            }, // A지점 X
+            {
+                drawTime: "afterDatasetsDraw", // (default)
+                type: "box",
+                mode: "horizontal",
+                yScaleID: "degree",
+                xScaleID: "timeid",
+                // value: '7.5',
+                borderColor: "rgb(255,127,0)",
+                backgroundColor: "rgba(255,127,0,0.05)",
+                borderWidth: 1,
+                xMin: taskArr[taskNumber].stabletime.A_s * 1000,
+                xMax: taskArr[taskNumber].stabletime.A_e * 1000,
+                yMin: taskArr[taskNumber].A_mean_ydegree - taskArr[taskNumber].A_std_ydegree * 2,
+                yMax: taskArr[taskNumber].A_mean_ydegree + taskArr[taskNumber].A_std_ydegree * 2
+            }, // A지점 Y
+            {
+                drawTime: "afterDatasetsDraw", // (default)
+                type: "box",
+                mode: "vertical",
+                yScaleID: "degree",
+                xScaleID: "timeid",
+                // value: '7.5',
+                borderColor: "green",
+                backgroundColor: "rgba(0,255,0,0.05)",
+                borderWidth: 1,
+                xMin: taskArr[taskNumber].startWaitTime * 1000,
+                xMax: taskArr[taskNumber].sample.startTime * 1000,
+                yMin: ymin,
+                yMax: ymax
+            }, // saccade_delay
+
+           ];
+        }
 
         //   console.log("annotation",annotation);
 
@@ -1485,8 +1679,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                             fontColor: "black"
                         },
                         ticks: {
-                            // max: 10,
-                            // min: -10,
+                            max: 10,
+                            min: -10,
 
                         },
                         gridLines: {

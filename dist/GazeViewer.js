@@ -236,7 +236,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         var type = task.type;
         var gazeArr = task.gazeData;
         var blink_arr = get_blink_arr(gazeArr);
-        task.blinkArr = blink_arr;
+        task.blinkArr = blink_arr; // % 로되어있는걸 degree 로 변환작업, 중점이 0,0 x,y degree
 
         for (var j = 0; j < gazeArr.length; j++) {
           var target_pixels = {
@@ -650,6 +650,98 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           task.diffArr = diffArr.length ? diffArr : null;
           task.sample.diff_fit_err = diffArr.length && (0, _mathjs.mean)(diffArr) || null;
           task.fitArr = fitArr; // console.log("여기볼게")
+        } else if (task.analysis.type === "antisaccade") {
+          var _A_ydegree_arr = [];
+          var _A_xdegree_arr = [];
+          task.stabletime = {
+            A_s: null,
+            A_e: null
+          };
+
+          for (var _j8 = 0; _j8 < gazeArr.length; _j8++) {
+            if (gazeArr[_j8].relTime * 1 >= task.startWaitTime * 1 - 2 && gazeArr[_j8].relTime * 1 <= task.startWaitTime * 1) {
+              if (task.stabletime.A_s === null) {
+                task.stabletime.A_s = gazeArr[_j8].relTime;
+              }
+
+              task.stabletime.A_e = gazeArr[_j8].relTime;
+
+              if (gazeArr[_j8].xdegree !== null && gazeArr[_j8].ydegree !== null) {
+                _A_xdegree_arr.push(gazeArr[_j8].xdegree);
+
+                _A_ydegree_arr.push(gazeArr[_j8].ydegree);
+              }
+            }
+          }
+
+          var _temp = {};
+          _temp.A_mean_ydegree = _A_ydegree_arr.length && (0, _mathjs.mean)(_A_ydegree_arr) || null;
+          _temp.A_mean_xdegree = _A_xdegree_arr.length && (0, _mathjs.mean)(_A_xdegree_arr) || null;
+          _temp.A_std_ydegree = _A_ydegree_arr.length && (0, _mathjs.std)(_A_ydegree_arr) || null;
+          _temp.A_std_xdegree = _A_xdegree_arr.length && (0, _mathjs.std)(_A_xdegree_arr) || null;
+          _A_ydegree_arr = [];
+          _A_xdegree_arr = []; //2표준편차밖을 제외하고 다시 구함
+
+          for (var _j9 = 0; _j9 < gazeArr.length; _j9++) {
+            if (gazeArr[_j9].relTime * 1 >= task.startWaitTime * 1 - 2 && gazeArr[_j9].relTime * 1 <= task.startWaitTime * 1) {
+              if (task.stabletime.A_s === null) {
+                task.stabletime.A_s = gazeArr[_j9].relTime;
+              }
+
+              task.stabletime.A_e = gazeArr[_j9].relTime;
+
+              if (gazeArr[_j9].xdegree !== null && gazeArr[_j9].ydegree !== null) {
+                if ((0, _mathjs.distance)([0, _temp.A_mean_xdegree], [0, gazeArr[_j9].xdegree]) <= _temp.A_std_xdegree) {
+                  _A_xdegree_arr.push(gazeArr[_j9].xdegree);
+                }
+
+                if ((0, _mathjs.distance)([0, _temp.A_mean_ydegree], [0, gazeArr[_j9].ydegree]) <= _temp.A_std_ydegree) {
+                  _A_ydegree_arr.push(gazeArr[_j9].ydegree);
+                }
+              }
+            }
+          }
+
+          task.A_mean_ydegree = _A_ydegree_arr.length && (0, _mathjs.mean)(_A_ydegree_arr) || null;
+          task.A_mean_xdegree = _A_xdegree_arr.length && (0, _mathjs.mean)(_A_xdegree_arr) || null;
+          task.A_std_ydegree = _A_ydegree_arr.length && (0, _mathjs.std)(_A_ydegree_arr) || null;
+          task.A_std_xdegree = _A_xdegree_arr.length && (0, _mathjs.std)(_A_xdegree_arr) || null;
+          task.sample = {
+            start_position: {
+              x: task.A_mean_xdegree,
+              y: task.A_mean_ydegree
+            },
+            fixation_threshold: 1,
+            startTime: null,
+            saccade_delay: null
+          }; //////흠...
+
+          var _isfoundStartTime = false;
+
+          for (var _j10 = 0; _j10 < gazeArr.length; _j10++) {
+            if (_j10 < gazeArr.length - 3 && gazeArr[_j10].relTime * 1 >= task.startWaitTime * 1) {
+              //gazeArr[j].xdegree , gazeArr[j].ydegree
+              //와 거리가
+              // 0.5 이상인친구가
+              //A_mean_xdegree ,A_mean_ydegree
+              if (gazeArr[_j10].xdegree === null || gazeArr[_j10].ydegree === null || gazeArr[_j10 + 1].xdegree === null || gazeArr[_j10 + 1].ydegree === null || gazeArr[_j10 + 2].xdegree === null || gazeArr[_j10 + 2].ydegree === null || task.A_mean_xdegree === null || task.A_mean_ydegree === null) {
+                continue;
+              }
+
+              if ((0, _mathjs.distance)([gazeArr[_j10].xdegree, gazeArr[_j10].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold && (0, _mathjs.distance)([gazeArr[_j10 + 1].xdegree, gazeArr[_j10 + 1].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold && (0, _mathjs.distance)([gazeArr[_j10 + 2].xdegree, gazeArr[_j10 + 2].ydegree], [task.A_mean_xdegree, task.A_mean_ydegree]) >= task.sample.fixation_threshold) {
+                task.sample.startTime = gazeArr[_j10].relTime * 1;
+                task.sample.saccade_delay = gazeArr[_j10].relTime * 1 - task.startWaitTime * 1;
+                _isfoundStartTime = true; // console.log(i+"번쨰"+"saccade_delay 찾음");
+
+                break;
+              }
+            }
+          }
+
+          if (_isfoundStartTime === false) {
+            task.sample.startTime = null;
+            task.sample.saccade_delay = null; // console.log(i+"번쨰"+"saccade_delay 못찾음");
+          }
         }
       }
 
@@ -766,10 +858,34 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           clockwise_err: clockwiseArr.length && (0, _mathjs.mean)(clockwiseArr) || null,
           anticlockwise_err: anticlockwiseArr.length && (0, _mathjs.mean)(anticlockwiseArr) || null
         };
-      } else if (data.screeningType === "antisaccade") {// saveData = {
+      } else if (data.screeningType === "antisaccade") {
+        // saveData = {
         //   ...s3data.analysis,
         //   right_antisaccade_delay: 10,
         // };
+        var right_antisaccade_delay_arr = [];
+        var left_antisaccade_delay_arr = [];
+
+        for (var _i5 = 0; _i5 < _taskArr.length; _i5++) {
+          var _task3 = _taskArr[_i5];
+          var _direction3 = _task3.analysis.direction;
+
+          if (_direction3 === "right") {
+            if (_task3.sample.saccade_delay !== null) {
+              right_antisaccade_delay_arr.push(_task3.sample.saccade_delay);
+            }
+          } else if (_direction3 === "left") {
+            if (_task3.sample.saccade_delay !== null) {
+              left_antisaccade_delay_arr.push(_task3.sample.saccade_delay);
+            }
+          }
+        }
+
+        saveData = {
+          right_antisaccade_delay: right_antisaccade_delay_arr.length && (0, _mathjs.mean)(right_antisaccade_delay_arr) || null,
+          left_antisaccade_delay: left_antisaccade_delay_arr.length && (0, _mathjs.mean)(left_antisaccade_delay_arr) || null
+        };
+        console.log("saveData", saveData);
       }
 
       console.log("savedata 객체작업끝");
@@ -1064,39 +1180,39 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     // console.log("gazeArr",gazeArr);
 
 
-    for (var _i5 = 0; _i5 < gazeArr.length; _i5++) {
-      if (gazeArr[_i5].relTime <= nowTime * 1) {
+    for (var _i6 = 0; _i6 < gazeArr.length; _i6++) {
+      if (gazeArr[_i6].relTime <= nowTime * 1) {
         // console.log("gazeArr[i].target_xdegree?",gazeArr[i]);
         // console.log("target_xdegree:",gazeArr[i].target_xdegree)
         var target_xdata = {
-          x: gazeArr[_i5].relTime * 1000,
-          y: gazeArr[_i5].target_xdegree ? gazeArr[_i5].target_xdegree : 0
+          x: gazeArr[_i6].relTime * 1000,
+          y: gazeArr[_i6].target_xdegree ? gazeArr[_i6].target_xdegree : 0
         };
         var target_ydata = {
-          x: gazeArr[_i5].relTime * 1000,
-          y: gazeArr[_i5].target_ydegree ? gazeArr[_i5].target_ydegree : 0
+          x: gazeArr[_i6].relTime * 1000,
+          y: gazeArr[_i6].target_ydegree ? gazeArr[_i6].target_ydegree : 0
         };
         var eye_xdata = {
-          x: gazeArr[_i5].relTime * 1000,
-          y: gazeArr[_i5].xdegree !== null ? gazeArr[_i5].xdegree : 0
+          x: gazeArr[_i6].relTime * 1000,
+          y: gazeArr[_i6].xdegree !== null ? gazeArr[_i6].xdegree : 0
         };
         var eye_ydata = {
-          x: gazeArr[_i5].relTime * 1000,
-          y: gazeArr[_i5].ydegree !== null ? gazeArr[_i5].ydegree : 0
+          x: gazeArr[_i6].relTime * 1000,
+          y: gazeArr[_i6].ydegree !== null ? gazeArr[_i6].ydegree : 0
         };
 
-        if (task.analysis.type === 'pursuit' && fitArr && fitArr[_i5]) {
-          if (fitArr[_i5].xdegreefit !== null) {
+        if (task.analysis.type === 'pursuit' && fitArr && fitArr[_i6]) {
+          if (fitArr[_i6].xdegreefit !== null) {
             Gdata.fit_x.push({
-              x: gazeArr[_i5].relTime * 1000,
-              y: fitArr[_i5].xdegreefit !== null ? fitArr[_i5].xdegreefit : 0
+              x: gazeArr[_i6].relTime * 1000,
+              y: fitArr[_i6].xdegreefit !== null ? fitArr[_i6].xdegreefit : 0
             });
           }
 
-          if (fitArr[_i5].ydegreefit !== null) {
+          if (fitArr[_i6].ydegreefit !== null) {
             Gdata.fit_y.push({
-              x: gazeArr[_i5].relTime * 1000,
-              y: fitArr[_i5].ydegreefit !== null ? fitArr[_i5].ydegreefit : 0
+              x: gazeArr[_i6].relTime * 1000,
+              y: fitArr[_i6].ydegreefit !== null ? fitArr[_i6].ydegreefit : 0
             });
           }
         }
@@ -1104,11 +1220,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         Gdata.target_x.push(target_xdata);
         Gdata.target_y.push(target_ydata);
 
-        if (gazeArr[_i5].xdegree !== null) {
+        if (gazeArr[_i6].xdegree !== null) {
           Gdata.eye_x.push(eye_xdata);
         }
 
-        if (gazeArr[_i5].ydegree !== null) {
+        if (gazeArr[_i6].ydegree !== null) {
           Gdata.eye_y.push(eye_ydata);
         } // if(fit_x)Gdata.fit_x.push(fit_x);
 
@@ -1269,6 +1385,56 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         yMax: ymax
       } // saccade_duration 
       ];
+    } else if (taskArr[taskNumber].analysis.type === 'antisaccade') {
+      annotation = [{
+        drawTime: "afterDatasetsDraw",
+        // (default)
+        type: "box",
+        mode: "horizontal",
+        yScaleID: "degree",
+        xScaleID: "timeid",
+        // value: '7.5',
+        borderColor: "green",
+        backgroundColor: "rgba(0,255,0,0.05)",
+        borderWidth: 1,
+        xMin: taskArr[taskNumber].stabletime.A_s * 1000,
+        xMax: taskArr[taskNumber].stabletime.A_e * 1000,
+        yMin: taskArr[taskNumber].A_mean_xdegree - taskArr[taskNumber].A_std_xdegree * 2,
+        yMax: taskArr[taskNumber].A_mean_xdegree + taskArr[taskNumber].A_std_xdegree * 2
+      }, // A지점 X
+      {
+        drawTime: "afterDatasetsDraw",
+        // (default)
+        type: "box",
+        mode: "horizontal",
+        yScaleID: "degree",
+        xScaleID: "timeid",
+        // value: '7.5',
+        borderColor: "rgb(255,127,0)",
+        backgroundColor: "rgba(255,127,0,0.05)",
+        borderWidth: 1,
+        xMin: taskArr[taskNumber].stabletime.A_s * 1000,
+        xMax: taskArr[taskNumber].stabletime.A_e * 1000,
+        yMin: taskArr[taskNumber].A_mean_ydegree - taskArr[taskNumber].A_std_ydegree * 2,
+        yMax: taskArr[taskNumber].A_mean_ydegree + taskArr[taskNumber].A_std_ydegree * 2
+      }, // A지점 Y
+      {
+        drawTime: "afterDatasetsDraw",
+        // (default)
+        type: "box",
+        mode: "vertical",
+        yScaleID: "degree",
+        xScaleID: "timeid",
+        // value: '7.5',
+        borderColor: "green",
+        backgroundColor: "rgba(0,255,0,0.05)",
+        borderWidth: 1,
+        xMin: taskArr[taskNumber].startWaitTime * 1000,
+        xMax: taskArr[taskNumber].sample.startTime * 1000,
+        yMin: ymin,
+        yMax: ymax
+      } // saccade_delay
+      ];
     } //   console.log("annotation",annotation);
 
 
@@ -1352,8 +1518,9 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             fontStyle: 'bold',
             fontColor: "black"
           },
-          ticks: {// max: 10,
-            // min: -10,
+          ticks: {
+            max: 10,
+            min: -10
           },
           gridLines: {
             color: "rgba(0, 0, 0, 0)"
