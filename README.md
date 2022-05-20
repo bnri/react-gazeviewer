@@ -1,3 +1,5 @@
+1.0.17  chartjs-plugin-datalabels => 0.7.0
+
 ```
 import React from 'react';
 import './App.css';
