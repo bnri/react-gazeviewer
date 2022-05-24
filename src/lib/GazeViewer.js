@@ -799,6 +799,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     fixation_threshold: 1,
                     startTime: null,
                     saccade_delay: null,
+                    errcount:null,
+                    errTime:null,
                   };
 
                   //////흠...
@@ -844,6 +846,46 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                     task.sample.startTime = null;
                     task.sample.saccade_delay = null;
                     // console.log(i+"번쨰"+"saccade_delay 못찾음");
+                  
+
+                  }
+                  else{
+                    // console.log("task",task);
+                    //startTime 이후로 방향에 따른 오차 시간 + @ 0.5초간의 시간을 구해야함.
+                    const isleft = task.analysis.direction==='left'?true:false;
+
+                    let errcount=0;
+                    let errStartTime=null;
+                    let errEndTime=null;
+                    for (let j = 0; j < gazeArr.length; j++) {
+                      if (gazeArr[j].relTime * 1 >= task.sample.startTime * 1 && gazeArr[j].relTime * 1 <= (task.sample.startTime * 1+0.5) ) {
+                        if(isleft){
+                          if(gazeArr[j].xdegree<(task.A_mean_xdegree-2*task.A_std_xdegree)){
+                            errcount++;
+                            if(errStartTime===null){
+                              errStartTime = gazeArr[j].relTime;
+
+                            }
+                            errEndTime= gazeArr[j].relTime+1/120;
+                          }
+
+                        }
+                        else{
+                          if(gazeArr[j].xdegree>(task.A_mean_xdegree+2*task.A_std_xdegree)){
+                            errcount++;
+                            if(errStartTime===null){
+                              errStartTime = gazeArr[j].relTime;
+                            }
+                            errEndTime= gazeArr[j].relTime+1/120;
+                          }
+                        }
+                      }
+
+                    }
+                    task.sample.errcount = errcount;
+                    task.sample.errTime = errcount/120;
+                    task.sample.errStartTime = errStartTime;
+                    task.sample.errEndTime = errEndTime;
                   }
                 }
               }
@@ -962,6 +1004,8 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 // };
                 let right_antisaccade_delay_arr = [];
                 let left_antisaccade_delay_arr = [];
+                let errFrequencyCount=null;
+                let sumErrTime=0;
                 for (let i = 0; i < taskArr.length; i++) {
                   const task = taskArr[i];
           
@@ -976,17 +1020,24 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                       left_antisaccade_delay_arr.push(task.sample.saccade_delay);
                     }
                   }
+                  if(task.sample.errcount){
+                    errFrequencyCount++;
+                  }
+                  sumErrTime+=task.sample.errTime;
                 }
+
                 saveData = {
                   right_antisaccade_delay: (right_antisaccade_delay_arr.length && mean(right_antisaccade_delay_arr)) || null,
                   left_antisaccade_delay: (left_antisaccade_delay_arr.length && mean(left_antisaccade_delay_arr)) || null,
+                  avgErrFrequencyRatio : errFrequencyCount/taskArr.length || null,
+                  avgErrTime : sumErrTime/taskArr.length || null
                 }
                 console.log("saveData",saveData);
               }
           
           
               console.log("savedata 객체작업끝");
-            console.log("taskArr", taskArr);
+              console.log("taskArr", taskArr);
 
 
 
@@ -1587,8 +1638,39 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 yMin: ymin,
                 yMax: ymax
             }, // saccade_delay
-
+            {
+              drawTime: "afterDatasetsDraw", // (default)
+              type: "box",
+              mode: "vertical",
+              yScaleID: "degree",
+              xScaleID: "timeid",
+              // value: '7.5',
+              borderColor: "red",
+              backgroundColor: "rgba(255,0,0,0.05)",
+              borderWidth: 1,
+              xMin: taskArr[taskNumber].sample.startTime * 1000,
+              xMax: (taskArr[taskNumber].sample.startTime+0.5) * 1000,
+              yMin: ymin,
+              yMax: ymax
+          }, // saccade_delay
            ];
+           if(taskArr[taskNumber].sample.errStartTime){
+             annotation.push({
+              drawTime: "afterDatasetsDraw", // (default)
+              type: "box",
+              mode: "vertical",
+              yScaleID: "degree",
+              xScaleID: "timeid",
+              // value: '7.5',
+              borderColor: "blue",
+              backgroundColor: "rgba(0,0,255,0.05)",
+              borderWidth: 1,
+              xMin: taskArr[taskNumber].sample.errStartTime * 1000,
+              xMax: taskArr[taskNumber].sample.errEndTime * 1000,
+              yMin: ymin,
+              yMax: ymax
+             });
+           }
         }
 
         //   console.log("annotation",annotation);
