@@ -905,7 +905,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
         // };
         var right_antisaccade_delay_arr = [];
         var left_antisaccade_delay_arr = [];
-        var errFrequencyCount = null;
+        var errFrequencyCount = 0;
         var sumErrTime = 0;
 
         for (var _i5 = 0; _i5 < _taskArr.length; _i5++) {
@@ -926,14 +926,16 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
             errFrequencyCount++;
           }
 
-          sumErrTime += _task3.sample.errTime;
+          if (_task3.sample.errTime) {
+            sumErrTime += _task3.sample.errTime;
+          }
         }
 
         saveData = {
           right_antisaccade_delay: right_antisaccade_delay_arr.length && (0, _mathjs.mean)(right_antisaccade_delay_arr) || null,
           left_antisaccade_delay: left_antisaccade_delay_arr.length && (0, _mathjs.mean)(left_antisaccade_delay_arr) || null,
-          avgErrFrequencyRatio: errFrequencyCount / _taskArr.length || null,
-          avgErrTime: sumErrTime / _taskArr.length || null
+          avgErrFrequencyRatio: errFrequencyCount / _taskArr.length || 0,
+          avgErrTime: sumErrTime / _taskArr.length || 0
         };
         console.log("saveData", saveData);
       }

@@ -1004,7 +1004,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                 // };
                 let right_antisaccade_delay_arr = [];
                 let left_antisaccade_delay_arr = [];
-                let errFrequencyCount=null;
+                let errFrequencyCount=0;
                 let sumErrTime=0;
                 for (let i = 0; i < taskArr.length; i++) {
                   const task = taskArr[i];
@@ -1023,14 +1023,16 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
                   if(task.sample.errcount){
                     errFrequencyCount++;
                   }
-                  sumErrTime+=task.sample.errTime;
+                  if(task.sample.errTime){
+                    sumErrTime += task.sample.errTime;
+                  }
                 }
 
                 saveData = {
                   right_antisaccade_delay: (right_antisaccade_delay_arr.length && mean(right_antisaccade_delay_arr)) || null,
                   left_antisaccade_delay: (left_antisaccade_delay_arr.length && mean(left_antisaccade_delay_arr)) || null,
-                  avgErrFrequencyRatio : errFrequencyCount/taskArr.length || null,
-                  avgErrTime : sumErrTime/taskArr.length || null
+                  avgErrFrequencyRatio : errFrequencyCount/taskArr.length || 0,
+                  avgErrTime : sumErrTime/taskArr.length || 0
                 }
                 console.log("saveData",saveData);
               }

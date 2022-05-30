@@ -1,5 +1,5 @@
-1.0.17  chartjs-plugin-datalabels => 0.7.0
-
+1.0.18  chartjs-plugin-datalabels => 0.7.0  
+1.0.19  change calculated value  
 ```
 import React from 'react';
 import './App.css';
