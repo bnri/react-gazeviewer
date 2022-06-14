@@ -150,6 +150,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
   var resizeInnerFrame = _react.default.useCallback(function () {
     if (!gazeRef.current) return;
+    if (!data) return;
 
     var resize100 = _lodash.default.debounce(function () {
       var pastScreenW = data.screenW;
@@ -183,7 +184,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       }
     }, 100);
 
-    resize100();
+    resize100(); // resize();
   }, [data]);
 
   var _React$useState15 = _react.default.useState(true),
@@ -191,7 +192,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       justoneTimeResizeTwice = _React$useState16[0],
       set_justoneTimeResizeTwice = _React$useState16[1];
 
-  _react.default.useEffect(function () {
+  _react.default.useLayoutEffect(function () {
     resizeInnerFrame(); // set_taskNumber(0);
     // set_nowTime(0);
 
@@ -1769,7 +1770,11 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     ref: ref
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "left"
-  }, /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("select", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "etcWrap"
+  }, /*#__PURE__*/_react.default.createElement("div", null, "Task"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "bottomLine"
+  }, /*#__PURE__*/_react.default.createElement("select", {
     value: taskNumber,
     onChange: function onChange(e) {
       return set_taskNumber(e.target.value * 1);
@@ -1779,14 +1784,16 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       key: "task" + index,
       value: index
     }, index + 1 + "번 task");
-  }))), /*#__PURE__*/_react.default.createElement("div", null, "speed", /*#__PURE__*/_react.default.createElement("select", {
+  }))), /*#__PURE__*/_react.default.createElement("div", null, "\uC7AC\uC0DD\uBC30\uC18D"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "bottomLine"
+  }, /*#__PURE__*/_react.default.createElement("select", {
     value: playSpeed,
     onChange: function onChange(e) {
       return set_playSpeed(e.target.value * 1);
     }
-  }, /*#__PURE__*/_react.default.createElement("option", null, "0.1"), /*#__PURE__*/_react.default.createElement("option", null, "0.5"), /*#__PURE__*/_react.default.createElement("option", null, "1"), /*#__PURE__*/_react.default.createElement("option", null, "2"), /*#__PURE__*/_react.default.createElement("option", null, "3"), /*#__PURE__*/_react.default.createElement("option", null, "10"))), /*#__PURE__*/_react.default.createElement("div", null, (nowTime * 1).toFixed(2), "/", endTime), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("button", {
-    onClick: handleBtnPlay
-  }, isPlaying ? '멈춤' : '재생')), /*#__PURE__*/_react.default.createElement("div", null, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/_react.default.createElement("option", null, "0.1"), /*#__PURE__*/_react.default.createElement("option", null, "0.5"), /*#__PURE__*/_react.default.createElement("option", null, "1"), /*#__PURE__*/_react.default.createElement("option", null, "2"), /*#__PURE__*/_react.default.createElement("option", null, "3"), /*#__PURE__*/_react.default.createElement("option", null, "10"))), /*#__PURE__*/_react.default.createElement("div", null, "\uC810\uD06C\uAE30"), /*#__PURE__*/_react.default.createElement("div", {
+    className: "bottomLine"
+  }, /*#__PURE__*/_react.default.createElement("input", {
     type: "range",
     style: {
       width: '80%'
@@ -1798,6 +1805,13 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       set_RPOG_SIZE(e.target.value * 1);
     }
   }))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "playWrap"
+  }, /*#__PURE__*/_react.default.createElement("button", {
+    className: isPlaying ? "btn-play playing" : "btn-play",
+    onClick: handleBtnPlay
+  })), /*#__PURE__*/_react.default.createElement("div", {
+    className: "timeWrap"
+  }, (nowTime * 1).toFixed(2), "/", endTime)), /*#__PURE__*/_react.default.createElement("div", {
     className: "right"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "viewZone"
