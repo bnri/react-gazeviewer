@@ -1772,7 +1772,9 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     className: "left"
   }, /*#__PURE__*/_react.default.createElement("div", {
     className: "etcWrap"
-  }, /*#__PURE__*/_react.default.createElement("div", null, "Task"), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: "bottomLineLabel"
+  }, "Task"), /*#__PURE__*/_react.default.createElement("div", {
     className: "bottomLine"
   }, /*#__PURE__*/_react.default.createElement("select", {
     value: taskNumber,
@@ -1784,14 +1786,18 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       key: "task" + index,
       value: index
     }, index + 1 + "번 task");
-  }))), /*#__PURE__*/_react.default.createElement("div", null, "\uC7AC\uC0DD\uBC30\uC18D"), /*#__PURE__*/_react.default.createElement("div", {
+  }))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "bottomLineLabel"
+  }, "\uC7AC\uC0DD\uBC30\uC18D"), /*#__PURE__*/_react.default.createElement("div", {
     className: "bottomLine"
   }, /*#__PURE__*/_react.default.createElement("select", {
     value: playSpeed,
     onChange: function onChange(e) {
       return set_playSpeed(e.target.value * 1);
     }
-  }, /*#__PURE__*/_react.default.createElement("option", null, "0.1"), /*#__PURE__*/_react.default.createElement("option", null, "0.5"), /*#__PURE__*/_react.default.createElement("option", null, "1"), /*#__PURE__*/_react.default.createElement("option", null, "2"), /*#__PURE__*/_react.default.createElement("option", null, "3"), /*#__PURE__*/_react.default.createElement("option", null, "10"))), /*#__PURE__*/_react.default.createElement("div", null, "\uC810\uD06C\uAE30"), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react.default.createElement("option", null, "0.1"), /*#__PURE__*/_react.default.createElement("option", null, "0.5"), /*#__PURE__*/_react.default.createElement("option", null, "1"), /*#__PURE__*/_react.default.createElement("option", null, "2"), /*#__PURE__*/_react.default.createElement("option", null, "3"), /*#__PURE__*/_react.default.createElement("option", null, "10"))), /*#__PURE__*/_react.default.createElement("div", {
+    className: "bottomLineLabel"
+  }, "\uC810\uD06C\uAE30"), /*#__PURE__*/_react.default.createElement("div", {
     className: "bottomLine"
   }, /*#__PURE__*/_react.default.createElement("input", {
     type: "range",

@@ -21,7 +21,15 @@ $main-color: #7367f0;
             height:calc(100% - 82px);
             overflow-y:auto;
             border-bottom:1px solid $main-border-color;
+            .bottomLineLabel{
+                display:flex;
+                justify-content: center;
+                align-items: center;                
+            }
             .bottomLine{
+                display:flex;
+                justify-content: center;
+                align-items: center;
                 border-bottom:1px solid $main-border-color;
                 padding-bottom:5px;
                 select{
@@ -36,6 +44,9 @@ $main-color: #7367f0;
             }
         }
         .playWrap{
+            display:flex;
+            justify-content: center;
+            align-items: center;
             margin-top:2px;
             height:50px;
             // background: purple;
