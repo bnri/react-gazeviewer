@@ -1907,7 +1907,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
   return (<div className="GazeViewer" ref={ref}>
     <div className="left">
       <div className="etcWrap">
-        <div>Task</div>
+        <div className="bottomLineLabel">Task</div>
         <div className="bottomLine">
           <select value={taskNumber} onChange={e => set_taskNumber(e.target.value * 1)}>
             {taskArr.map((task, index) => {
@@ -1918,7 +1918,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
           </select>
         </div>
 
-        <div>
+        <div className="bottomLineLabel">
           재생배속
         </div>
         <div className="bottomLine">
@@ -1949,7 +1949,7 @@ const GazeViewer = React.forwardRef(({ ...props }, ref) => {
 
 
 
-        <div>
+        <div className="bottomLineLabel">
           점크기
         </div>
         <div className="bottomLine">
