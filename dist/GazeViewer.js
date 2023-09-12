@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports["default"] = void 0;
 
 var _react = _interopRequireDefault(require("react"));
 
@@ -23,7 +23,7 @@ var _svdJs = require("svd-js");
 
 var _mathjs = require("mathjs");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 
@@ -104,55 +104,55 @@ function get_blink_arr(obj) {
 
 var lineChart;
 
-var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
+var GazeViewer = /*#__PURE__*/_react["default"].forwardRef(function (_ref, ref) {
   var props = _extends({}, _ref);
 
   var data = props.data;
 
-  var _React$useState = _react.default.useState(0),
+  var _React$useState = _react["default"].useState(0),
       _React$useState2 = _slicedToArray(_React$useState, 2),
       nowTime = _React$useState2[0],
       set_nowTime = _React$useState2[1];
 
-  var _React$useState3 = _react.default.useState(0),
+  var _React$useState3 = _react["default"].useState(0),
       _React$useState4 = _slicedToArray(_React$useState3, 2),
       taskNumber = _React$useState4[0],
       set_taskNumber = _React$useState4[1];
 
-  var _React$useState5 = _react.default.useState(1),
+  var _React$useState5 = _react["default"].useState(1),
       _React$useState6 = _slicedToArray(_React$useState5, 2),
       playSpeed = _React$useState6[0],
       set_playSpeed = _React$useState6[1];
 
-  var _React$useState7 = _react.default.useState(false),
+  var _React$useState7 = _react["default"].useState(false),
       _React$useState8 = _slicedToArray(_React$useState7, 2),
       isPlaying = _React$useState8[0],
       set_isPlaying = _React$useState8[1];
 
-  var gazeRef = _react.default.useRef();
+  var gazeRef = _react["default"].useRef();
 
-  var canvasRef = _react.default.useRef();
+  var canvasRef = _react["default"].useRef();
 
-  var _React$useState9 = _react.default.useState(0),
+  var _React$useState9 = _react["default"].useState(0),
       _React$useState10 = _slicedToArray(_React$useState9, 2),
       innerFrameScale = _React$useState10[0],
       set_innerFrameScale = _React$useState10[1];
 
-  var _React$useState11 = _react.default.useState(0),
+  var _React$useState11 = _react["default"].useState(0),
       _React$useState12 = _slicedToArray(_React$useState11, 2),
       innerFrameTop = _React$useState12[0],
       set_innerFrameTop = _React$useState12[1];
 
-  var _React$useState13 = _react.default.useState(0),
+  var _React$useState13 = _react["default"].useState(0),
       _React$useState14 = _slicedToArray(_React$useState13, 2),
       innerFrameLeft = _React$useState14[0],
       set_innerFrameLeft = _React$useState14[1];
 
-  var resizeInnerFrame = _react.default.useCallback(function () {
+  var resizeInnerFrame = _react["default"].useCallback(function () {
     if (!gazeRef.current) return;
     if (!data) return;
 
-    var resize100 = _lodash.default.debounce(function () {
+    var resize100 = _lodash["default"].debounce(function () {
       var pastScreenW = data.screenW;
       var pastScreenH = data.screenH; //console.log(pastScreenW + 'x' + pastScreenH);
 
@@ -187,12 +187,12 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     resize100(); // resize();
   }, [data]);
 
-  var _React$useState15 = _react.default.useState(true),
+  var _React$useState15 = _react["default"].useState(true),
       _React$useState16 = _slicedToArray(_React$useState15, 2),
       justoneTimeResizeTwice = _React$useState16[0],
       set_justoneTimeResizeTwice = _React$useState16[1];
 
-  _react.default.useLayoutEffect(function () {
+  _react["default"].useLayoutEffect(function () {
     resizeInnerFrame(); // set_taskNumber(0);
     // set_nowTime(0);
 
@@ -209,7 +209,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     };
   }, [resizeInnerFrame, justoneTimeResizeTwice]);
 
-  var taskArr = _react.default.useMemo(function () {
+  var taskArr = _react["default"].useMemo(function () {
     if (data) {
       console.log("원본json", data); // console.log(data);
 
@@ -949,7 +949,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     }
   }, [data]);
 
-  var endTime = _react.default.useMemo(function () {
+  var endTime = _react["default"].useMemo(function () {
     if (taskArr && taskArr[taskNumber]) {
       // console.log("지금꺼정보", taskArr[taskNumber]);
       return taskArr[taskNumber].relativeEndTime.toFixed(2);
@@ -966,13 +966,13 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     set_isPlaying(!isPlaying);
   };
 
-  _react.default.useEffect(function () {
+  _react["default"].useEffect(function () {
     if (endTime !== null) {
       set_nowTime(endTime);
     }
   }, [endTime]);
 
-  _react.default.useEffect(function () {
+  _react["default"].useEffect(function () {
     var myrequest;
     var startTime = Date.now();
 
@@ -1005,17 +1005,17 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     };
   }, [isPlaying, endTime, playSpeed]);
 
-  var _React$useState17 = _react.default.useState(0),
+  var _React$useState17 = _react["default"].useState(0),
       _React$useState18 = _slicedToArray(_React$useState17, 2),
       targetLeft = _React$useState18[0],
       set_targetLeft = _React$useState18[1];
 
-  var _React$useState19 = _react.default.useState(0),
+  var _React$useState19 = _react["default"].useState(0),
       _React$useState20 = _slicedToArray(_React$useState19, 2),
       targetTop = _React$useState20[0],
       set_targetTop = _React$useState20[1];
 
-  var setTargetLocation = _react.default.useCallback(function () {
+  var setTargetLocation = _react["default"].useCallback(function () {
     // console.log("setTargetLocation!!")
     var task = taskArr[taskNumber];
     if (!task) return;
@@ -1088,12 +1088,12 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     }
   }, [nowTime, taskArr, taskNumber, data]);
 
-  var _React$useState21 = _react.default.useState(3),
+  var _React$useState21 = _react["default"].useState(3),
       _React$useState22 = _slicedToArray(_React$useState21, 2),
       RPOG_SIZE = _React$useState22[0],
       set_RPOG_SIZE = _React$useState22[1];
 
-  var drawGaze = _react.default.useCallback(function () {
+  var drawGaze = _react["default"].useCallback(function () {
     var task = taskArr[taskNumber];
     if (!task) return;
     var gazeArr = task.gazeData;
@@ -1130,7 +1130,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     }
   }, [nowTime, taskArr, taskNumber, data, RPOG_SIZE]);
 
-  var drawChart = _react.default.useCallback(function () {
+  var drawChart = _react["default"].useCallback(function () {
     var task = taskArr[taskNumber];
     if (!task) return; // const pixel_per_cm = data.monitorInform.MONITOR_PX_PER_CM; //1cm 당 pixel
     // const degree_per_cm = Math.atan(1 / data.defaultZ) * 180 / Math.PI;
@@ -1300,20 +1300,20 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     }
   }, [nowTime, taskArr, taskNumber]);
 
-  _react.default.useEffect(function () {
+  _react["default"].useEffect(function () {
     drawChart();
   }, [drawChart]);
 
-  _react.default.useEffect(function () {
+  _react["default"].useEffect(function () {
     setTargetLocation();
     drawGaze();
   }, [setTargetLocation, drawGaze]);
 
-  var _React$useState23 = _react.default.useState('250'),
+  var _React$useState23 = _react["default"].useState('250'),
       _React$useState24 = _slicedToArray(_React$useState23, 1),
       chartHeight = _React$useState24[0];
 
-  var Goptions = _react.default.useMemo(function () {
+  var Goptions = _react["default"].useMemo(function () {
     // console.log(taskArr[taskNumber]);
     //95% 신뢰구간 1.96
     // 99% 신뢰구간 2.58
@@ -1630,7 +1630,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     };
   }, [taskArr, taskNumber]);
 
-  var _React$useState25 = _react.default.useState({
+  var _React$useState25 = _react["default"].useState({
     datasets: [{
       //targetx
       data: [
@@ -1765,41 +1765,41 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       _React$useState26 = _slicedToArray(_React$useState25, 1),
       Gdata = _React$useState26[0];
 
-  return /*#__PURE__*/_react.default.createElement("div", {
+  return /*#__PURE__*/_react["default"].createElement("div", {
     className: "GazeViewer",
     ref: ref
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "left"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "etcWrap"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "bottomLineLabel"
-  }, "Task"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "Task"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "bottomLine"
-  }, /*#__PURE__*/_react.default.createElement("select", {
+  }, /*#__PURE__*/_react["default"].createElement("select", {
     value: taskNumber,
     onChange: function onChange(e) {
       return set_taskNumber(e.target.value * 1);
     }
   }, taskArr.map(function (task, index) {
-    return /*#__PURE__*/_react.default.createElement("option", {
+    return /*#__PURE__*/_react["default"].createElement("option", {
       key: "task" + index,
       value: index
     }, index + 1 + "번 task");
-  }))), /*#__PURE__*/_react.default.createElement("div", {
+  }))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "bottomLineLabel"
-  }, "\uC7AC\uC0DD\uBC30\uC18D"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "\uC7AC\uC0DD\uBC30\uC18D"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "bottomLine"
-  }, /*#__PURE__*/_react.default.createElement("select", {
+  }, /*#__PURE__*/_react["default"].createElement("select", {
     value: playSpeed,
     onChange: function onChange(e) {
       return set_playSpeed(e.target.value * 1);
     }
-  }, /*#__PURE__*/_react.default.createElement("option", null, "0.1"), /*#__PURE__*/_react.default.createElement("option", null, "0.5"), /*#__PURE__*/_react.default.createElement("option", null, "1"), /*#__PURE__*/_react.default.createElement("option", null, "2"), /*#__PURE__*/_react.default.createElement("option", null, "3"), /*#__PURE__*/_react.default.createElement("option", null, "10"))), /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("option", null, "0.1"), /*#__PURE__*/_react["default"].createElement("option", null, "0.5"), /*#__PURE__*/_react["default"].createElement("option", null, "1"), /*#__PURE__*/_react["default"].createElement("option", null, "2"), /*#__PURE__*/_react["default"].createElement("option", null, "3"), /*#__PURE__*/_react["default"].createElement("option", null, "10"))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "bottomLineLabel"
-  }, "\uC810\uD06C\uAE30"), /*#__PURE__*/_react.default.createElement("div", {
+  }, "\uC810\uD06C\uAE30"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "bottomLine"
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/_react["default"].createElement("input", {
     type: "range",
     style: {
       width: '80%'
@@ -1810,25 +1810,25 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     onChange: function onChange(e) {
       set_RPOG_SIZE(e.target.value * 1);
     }
-  }))), /*#__PURE__*/_react.default.createElement("div", {
+  }))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "playWrap"
-  }, /*#__PURE__*/_react.default.createElement("button", {
+  }, /*#__PURE__*/_react["default"].createElement("button", {
     className: isPlaying ? "btn-play playing" : "btn-play",
     onClick: handleBtnPlay
-  })), /*#__PURE__*/_react.default.createElement("div", {
+  })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "timeWrap"
-  }, (nowTime * 1).toFixed(2), "/", endTime)), /*#__PURE__*/_react.default.createElement("div", {
+  }, (nowTime * 1).toFixed(2), "/", endTime)), /*#__PURE__*/_react["default"].createElement("div", {
     className: "right"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "viewZone"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "viewGaze",
     style: {
       width: '100%',
       height: "calc(100% - ".concat(chartHeight, "px)")
     },
     ref: gazeRef
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "GC",
     style: {
       width: "".concat(data.screenW, "px"),
@@ -1851,7 +1851,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 
       var diff = task.startCoord.x - task.endCoord.x;
       var targetLeft2 = task.startCoord.x + diff - target_size / 2 + 'px';
-      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
         className: "baseTarget",
         style: {
           width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
@@ -1860,7 +1860,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           left: targetLeft1,
           top: _targetTop
         }
-      }), /*#__PURE__*/_react.default.createElement("div", {
+      }), /*#__PURE__*/_react["default"].createElement("div", {
         className: "baseTarget",
         style: {
           width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
@@ -1869,7 +1869,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
           left: targetLeft2,
           top: _targetTop
         }
-      }), /*#__PURE__*/_react.default.createElement("div", {
+      }), /*#__PURE__*/_react["default"].createElement("div", {
         className: "baseTarget",
         style: {
           width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
@@ -1882,7 +1882,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     } else {
       return null;
     }
-  }(), /*#__PURE__*/_react.default.createElement("div", {
+  }(), /*#__PURE__*/_react["default"].createElement("div", {
     className: "target",
     style: {
       width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
@@ -1927,7 +1927,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
       var targetL, targetT;
       targetL = task.centerCoord.x + fit.xpxfit - data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size / 2;
       targetT = task.centerCoord.y + fit.ypxfit - data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size / 2;
-      return /*#__PURE__*/_react.default.createElement(_react.default.Fragment, null, /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
         className: "target",
         style: {
           width: taskArr[taskNumber] && data.monitorInform.MONITOR_PX_PER_CM * taskArr[taskNumber].target_size + 'px',
@@ -1945,7 +1945,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     var task = taskArr[taskNumber]; // console.log(task);
 
     if (task.type === 'circular') {
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/_react["default"].createElement("div", {
         className: "originCircle",
         style: {
           left: "".concat(task.centerCoord.x - data.monitorInform.MONITOR_PX_PER_CM * task.distance, "px"),
@@ -1980,7 +1980,7 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     var height_px = height_cm * data.monitorInform.MONITOR_PX_PER_CM; //세로 반지름
 
     if (task.type === 'circular') {
-      return /*#__PURE__*/_react.default.createElement("div", {
+      return /*#__PURE__*/_react["default"].createElement("div", {
         className: "fitCircle",
         style: {
           left: "".concat(task.centerCoord.x - width_px + xoffset_px, "px"),
@@ -1992,35 +1992,35 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
     } else {
       return null;
     }
-  }(), /*#__PURE__*/_react.default.createElement("div", {
+  }(), /*#__PURE__*/_react["default"].createElement("div", {
     className: "GC-canvasWrapper",
     style: {
       width: '100%',
       height: '100%'
     }
-  }, /*#__PURE__*/_react.default.createElement("canvas", {
+  }, /*#__PURE__*/_react["default"].createElement("canvas", {
     className: "gazeCanvas",
     width: data.screenW,
     height: data.screenH,
     ref: canvasRef
-  })))), /*#__PURE__*/_react.default.createElement("div", {
+  })))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "viewChart",
     style: {
       width: '100%',
       height: "".concat(chartHeight, "px")
     }
-  }, /*#__PURE__*/_react.default.createElement(_reactChartjs.Line, {
+  }, /*#__PURE__*/_react["default"].createElement(_reactChartjs.Line, {
     id: "GazeChartLine",
     data: Gdata,
     options: Goptions,
     ref: function ref(reference) {
       lineChart = reference;
     }
-  }))), /*#__PURE__*/_react.default.createElement("div", {
+  }))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "barZone"
-  }, /*#__PURE__*/_react.default.createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "rangePlayWrapper"
-  }, /*#__PURE__*/_react.default.createElement("input", {
+  }, /*#__PURE__*/_react["default"].createElement("input", {
     className: "rangePlay",
     type: "range",
     step: "0.01",
@@ -2034,4 +2034,4 @@ var GazeViewer = /*#__PURE__*/_react.default.forwardRef(function (_ref, ref) {
 });
 
 var _default = GazeViewer;
-exports.default = _default;
+exports["default"] = _default;
