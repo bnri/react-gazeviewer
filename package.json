@@ -16,6 +16,7 @@
     "chartjs-chart-box-and-violin-plot": "^2.3.0",
     "chartjs-plugin-annotation": "^0.5.7",
     "chartjs-plugin-datalabels": "^0.7.0",
+    "fraction.js": "4.2.0",
     "mathjs": "10.5.0",
     "react-chartjs-2": "^2.11.1",
     "svd-js": "^1.1.1"
@@ -51,10 +52,10 @@
   "devDependencies": {
     "@babel/cli": "^7.17.6",
     "@babel/preset-react": "^7.16.7",
-    "node-sass": "^4.14.1",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.1.1",
     "@testing-library/user-event": "^13.5.0",
+    "node-sass": "^4.14.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-scripts": "^5.0.1",
